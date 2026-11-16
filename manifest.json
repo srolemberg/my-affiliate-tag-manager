@@ -1,0 +1,23 @@
+{
+  "name": "__MSG_appName__",
+  "description": "__MSG_appDescription__",
+  "version": "1.0",
+  "manifest_version": 3,
+  "default_locale": "pt_BR",
+  "permissions": [
+    "activeTab",
+    "tabs",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "tag.png"
+  }
+}

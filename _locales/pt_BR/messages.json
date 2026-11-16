@@ -1,0 +1,275 @@
+{
+  "appName": {
+    "message": "Minhas Tags de Afiliado"
+  },
+  "appDescription": {
+    "message": "Uma extensão para gerenciar tags de afiliados."
+  },
+  "detectedTagLabel": {
+    "message": "Tag identificada na URL:"
+  },
+  "checkingTag": {
+    "message": "Verificando tag..."
+  },
+  "affiliateTag": {
+    "message": "Tag de afiliado"
+  },
+  "selectTag": {
+    "message": "Selecione uma tag"
+  },
+  "automaticDetectionNote": {
+    "message": "As tags são detectadas automaticamente. Use esta lista apenas para trocar a tag atual."
+  },
+  "applyTagButton": {
+    "message": "Aplicar tag e atualizar a aba"
+  },
+  "amazonCookieNote": {
+    "message": "A tag de afiliado da Amazon não precisa permanecer visível na barra de endereços durante a navegação. A Amazon grava um cookie no navegador que rastreia as compras durante as próximas 24 horas, mesmo que o parâmetro desapareça da URL."
+  },
+  "sessionWarning": {
+    "message": "A sessão é gerenciada pela Amazon; por isso, a extensão não pode garantir que a alteração tenha efeito imediato."
+  },
+  "manageTagsLink": {
+    "message": "Configurar e gerenciar tags"
+  },
+  "invalidDomainUnavailable": {
+    "message": "Não foi possível identificar um domínio válido."
+  },
+  "invalidDomainForTags": {
+    "message": "Este domínio não é válido para aplicar tags."
+  },
+  "invalidDomainValidation": {
+    "message": "Não foi possível validar o domínio desta página."
+  },
+  "tagWithoutValue": {
+    "message": "Tag sem valor na URL"
+  },
+  "noTagIdentified": {
+    "message": "Nenhuma tag identificada"
+  },
+  "addTagInSettings": {
+    "message": "Adicione uma tag nas configurações para começar."
+  },
+  "popupLoadError": {
+    "message": "Não foi possível carregar os dados do popup:"
+  },
+  "selectValidTag": {
+    "message": "Selecione uma tag válida."
+  },
+  "tabUrlUnavailable": {
+    "message": "A URL desta aba não está disponível."
+  },
+  "applyTagError": {
+    "message": "Não foi possível aplicar a tag: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsIntro": {
+    "message": "As tags encontradas nas URLs da Amazon são salvas automaticamente neste navegador."
+  },
+  "tagKey": {
+    "message": "Chave"
+  },
+  "optionalDescription": {
+    "message": "Descrição (opcional)"
+  },
+  "addButton": {
+    "message": "Adicionar"
+  },
+  "savedTagsHeading": {
+    "message": "Tags salvas"
+  },
+  "saveChangesButton": {
+    "message": "Salvar alterações"
+  },
+  "exportJsonButton": {
+    "message": "Exportar JSON"
+  },
+  "deleteAllButton": {
+    "message": "Excluir todas"
+  },
+  "importJsonLabel": {
+    "message": "Importar arquivo JSON (mesclar com a lista atual)"
+  },
+  "manageTagsAriaLabel": {
+    "message": "Importar e exportar tags"
+  },
+  "serviceWorkerInvalidResponse": {
+    "message": "O service worker retornou uma resposta inválida."
+  },
+  "noSavedTags": {
+    "message": "Nenhuma tag salva."
+  },
+  "currentKeyLabel": {
+    "message": "Chave atual: $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "editKeyAriaLabel": {
+    "message": "Editar chave $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "currentDescriptionLabel": {
+    "message": "Descrição atual: $1",
+    "placeholders": {
+      "description": {
+        "content": "$1"
+      }
+    }
+  },
+  "undefinedDescription": {
+    "message": "Não definida"
+  },
+  "editDescriptionAriaLabel": {
+    "message": "Editar descrição de $1",
+    "placeholders": {
+      "description": {
+        "content": "$1"
+      }
+    }
+  },
+  "deleteButton": {
+    "message": "Excluir"
+  },
+  "confirmDeleteTag": {
+    "message": "Deseja excluir a chave \"$1\"?",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "tagDeleted": {
+    "message": "Tag excluída."
+  },
+  "deleteTagError": {
+    "message": "Não foi possível excluir: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "validTagRequired": {
+    "message": "Informe uma tag válida."
+  },
+  "tagAdded": {
+    "message": "Tag adicionada."
+  },
+  "addTagError": {
+    "message": "Não foi possível adicionar: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "changesSaved": {
+    "message": "Alterações salvas."
+  },
+  "saveChangesError": {
+    "message": "Não foi possível salvar as alterações: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmDeleteAll": {
+    "message": "Deseja excluir todas as chaves salvas?"
+  },
+  "confirmDeleteAllWarning": {
+    "message": "Esta ação é irreversível. Tem certeza de que deseja continuar?"
+  },
+  "allTagsDeleted": {
+    "message": "Todas as chaves foram removidas. Tags presentes em páginas Amazon poderão ser descobertas novamente."
+  },
+  "deleteAllError": {
+    "message": "Não foi possível excluir as chaves: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "exportedJson": {
+    "message": "Arquivo JSON exportado."
+  },
+  "exportFileName": {
+    "message": "amazon-tags.json"
+  },
+  "fileReadError": {
+    "message": "O navegador não conseguiu ler o arquivo selecionado."
+  },
+  "invalidJsonTags": {
+    "message": "O JSON deve conter uma lista \"tags\" não vazia. Cada item deve ter uma tag e uma descrição opcional válida."
+  },
+  "importedTags": {
+    "message": "Tags importadas e mescladas sem duplicatas."
+  },
+  "importFileError": {
+    "message": "Não foi possível importar o arquivo: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "loadTagsError": {
+    "message": "Não foi possível carregar as tags: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "invalidUpdatesList": {
+    "message": "A lista de alterações é inválida."
+  },
+  "invalidUpdate": {
+    "message": "Uma das alterações é inválida."
+  },
+  "invalidKeysOrDescriptions": {
+    "message": "Informe chaves e descrições válidas."
+  },
+  "duplicateEditedKey": {
+    "message": "A mesma chave não pode ser editada mais de uma vez."
+  },
+  "editedKeyNotFound": {
+    "message": "Uma das chaves que deseja editar não foi encontrada."
+  },
+  "duplicateKeysResult": {
+    "message": "As alterações resultariam em chaves duplicadas."
+  },
+  "storageDeleteError": {
+    "message": "As chaves não foram removidas do armazenamento."
+  },
+  "invalidTagOperation": {
+    "message": "Operação de tags inválida."
+  },
+  "mutateTagsError": {
+    "message": "Não foi possível atualizar as tags salvas:"
+  },
+  "saveDiscoveredTagsError": {
+    "message": "Não foi possível salvar as tags encontradas:"
+  },
+  "updateBadgeError": {
+    "message": "Não foi possível atualizar o badge da extensão:"
+  },
+  "getActiveTabError": {
+    "message": "Não foi possível obter a aba ativa:"
+  },
+  "identifyActiveTabError": {
+    "message": "Não foi possível identificar a aba ativa:"
+  }
+}

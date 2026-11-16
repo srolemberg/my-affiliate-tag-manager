@@ -1,0 +1,275 @@
+{
+  "appName": {
+    "message": "My Affiliate Tags"
+  },
+  "appDescription": {
+    "message": "An extension for managing affiliate tags."
+  },
+  "detectedTagLabel": {
+    "message": "Tag detected in the URL:"
+  },
+  "checkingTag": {
+    "message": "Checking tag..."
+  },
+  "affiliateTag": {
+    "message": "Affiliate tag"
+  },
+  "selectTag": {
+    "message": "Select a tag"
+  },
+  "automaticDetectionNote": {
+    "message": "Tags are detected automatically. Use this list only to switch the current tag."
+  },
+  "applyTagButton": {
+    "message": "Apply tag and reload tab"
+  },
+  "amazonCookieNote": {
+    "message": "The Amazon affiliate tag does not need to remain visible in the address bar while browsing. Amazon stores a cookie in the browser that tracks purchases for the next 24 hours, even if the parameter disappears from the URL."
+  },
+  "sessionWarning": {
+    "message": "The session is managed by Amazon, so the extension cannot guarantee that the change will take effect immediately."
+  },
+  "manageTagsLink": {
+    "message": "Configure and manage tags"
+  },
+  "invalidDomainUnavailable": {
+    "message": "Could not identify a valid domain."
+  },
+  "invalidDomainForTags": {
+    "message": "This domain is not valid for applying tags."
+  },
+  "invalidDomainValidation": {
+    "message": "Could not validate this page's domain."
+  },
+  "tagWithoutValue": {
+    "message": "Tag has no value in the URL"
+  },
+  "noTagIdentified": {
+    "message": "No tag detected"
+  },
+  "addTagInSettings": {
+    "message": "Add a tag in settings to get started."
+  },
+  "popupLoadError": {
+    "message": "Could not load popup data:"
+  },
+  "selectValidTag": {
+    "message": "Select a valid tag."
+  },
+  "tabUrlUnavailable": {
+    "message": "This tab's URL is unavailable."
+  },
+  "applyTagError": {
+    "message": "Could not apply the tag: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsIntro": {
+    "message": "Tags found in Amazon URLs are automatically saved in this browser."
+  },
+  "tagKey": {
+    "message": "Key"
+  },
+  "optionalDescription": {
+    "message": "Description (optional)"
+  },
+  "addButton": {
+    "message": "Add"
+  },
+  "savedTagsHeading": {
+    "message": "Saved tags"
+  },
+  "saveChangesButton": {
+    "message": "Save changes"
+  },
+  "exportJsonButton": {
+    "message": "Export JSON"
+  },
+  "deleteAllButton": {
+    "message": "Delete all"
+  },
+  "importJsonLabel": {
+    "message": "Import JSON file (merge with current list)"
+  },
+  "manageTagsAriaLabel": {
+    "message": "Import and export tags"
+  },
+  "serviceWorkerInvalidResponse": {
+    "message": "The service worker returned an invalid response."
+  },
+  "noSavedTags": {
+    "message": "No tags saved."
+  },
+  "currentKeyLabel": {
+    "message": "Current key: $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "editKeyAriaLabel": {
+    "message": "Edit key $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "currentDescriptionLabel": {
+    "message": "Current description: $1",
+    "placeholders": {
+      "description": {
+        "content": "$1"
+      }
+    }
+  },
+  "undefinedDescription": {
+    "message": "Not set"
+  },
+  "editDescriptionAriaLabel": {
+    "message": "Edit description for $1",
+    "placeholders": {
+      "description": {
+        "content": "$1"
+      }
+    }
+  },
+  "deleteButton": {
+    "message": "Delete"
+  },
+  "confirmDeleteTag": {
+    "message": "Delete the key \"$1\"?",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "tagDeleted": {
+    "message": "Tag deleted."
+  },
+  "deleteTagError": {
+    "message": "Could not delete: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "validTagRequired": {
+    "message": "Enter a valid tag."
+  },
+  "tagAdded": {
+    "message": "Tag added."
+  },
+  "addTagError": {
+    "message": "Could not add the tag: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "changesSaved": {
+    "message": "Changes saved."
+  },
+  "saveChangesError": {
+    "message": "Could not save changes: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmDeleteAll": {
+    "message": "Delete all saved keys?"
+  },
+  "confirmDeleteAllWarning": {
+    "message": "This action cannot be undone. Are you sure you want to continue?"
+  },
+  "allTagsDeleted": {
+    "message": "All keys have been removed. Tags on Amazon pages may be detected again."
+  },
+  "deleteAllError": {
+    "message": "Could not delete the keys: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "exportedJson": {
+    "message": "JSON file exported."
+  },
+  "exportFileName": {
+    "message": "amazon-tags.json"
+  },
+  "fileReadError": {
+    "message": "The browser could not read the selected file."
+  },
+  "invalidJsonTags": {
+    "message": "The JSON must contain a non-empty \"tags\" list. Each item must have a tag and an optional valid description."
+  },
+  "importedTags": {
+    "message": "Tags imported and merged without duplicates."
+  },
+  "importFileError": {
+    "message": "Could not import the file: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "loadTagsError": {
+    "message": "Could not load tags: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "invalidUpdatesList": {
+    "message": "The changes list is invalid."
+  },
+  "invalidUpdate": {
+    "message": "One of the changes is invalid."
+  },
+  "invalidKeysOrDescriptions": {
+    "message": "Enter valid keys and descriptions."
+  },
+  "duplicateEditedKey": {
+    "message": "The same key cannot be edited more than once."
+  },
+  "editedKeyNotFound": {
+    "message": "One of the keys you want to edit could not be found."
+  },
+  "duplicateKeysResult": {
+    "message": "These changes would result in duplicate keys."
+  },
+  "storageDeleteError": {
+    "message": "The keys were not removed from storage."
+  },
+  "invalidTagOperation": {
+    "message": "Invalid tag operation."
+  },
+  "mutateTagsError": {
+    "message": "Could not update saved tags:"
+  },
+  "saveDiscoveredTagsError": {
+    "message": "Could not save detected tags:"
+  },
+  "updateBadgeError": {
+    "message": "Could not update the extension badge:"
+  },
+  "getActiveTabError": {
+    "message": "Could not get the active tab:"
+  },
+  "identifyActiveTabError": {
+    "message": "Could not identify the active tab:"
+  }
+}
