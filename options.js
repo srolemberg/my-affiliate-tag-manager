@@ -347,7 +347,7 @@ exportButton.addEventListener('click', () => {
         description,
         url,
     }));
-    const json = JSON.stringify({version: 3, tags: exportTags}, null, 2);
+    const json = JSON.stringify({version: 1, tags: exportTags}, null, 2);
     const file = new Blob([json], {type: 'application/json'});
     const downloadUrl = URL.createObjectURL(file);
     const downloadLink = document.createElement('a');

@@ -32,7 +32,7 @@ This root-level file is the single source of repository instructions for all cod
 - `background.js` serializes mutations through `tagMutationQueue`; route tag-list writes through this queue rather than writing directly from the options page.
 - Merge operations retain existing descriptions when incoming entries have none. `webNavigation.onCompleted` for the main frame on a supported URL preserves an existing URL, captures the full URL for a new tag, and replaces the global `lastAccessedTag` record with the last tag in that URL and an ISO 8601 timestamp. Popup launches replace that record as well; tab focus and `tabs.onUpdated` do not.
 - Tag keys and descriptions are trimmed, and tag keys remain unique. `getTagFromAmazonUrl()` derives the key only from valid HTTP(S) URLs on supported domains with exactly one distinct non-empty `tag` value; reject ambiguous URLs. The options page shows keys as read-only, and editing a URL changes the derived key.
-- JSON export uses `{ "version": 3, "tags": [...] }` with `tag`, `description`, and `url`; the global access record is not exported. Imports also accept older arrays and records without URLs, ignore any imported `lastAccessed`, merge with stored tags, and remove duplicates.
+- JSON export uses `{ "version": 1, "tags": [...] }` with `tag`, `description`, and `url`; the global access record is not exported. Imports also accept older arrays and records without URLs, ignore any imported `lastAccessed`, merge with stored tags, and remove duplicates.
 
 ## Maintenance guidelines
 

@@ -46,7 +46,7 @@ The exported file uses this format:
 
 ```json
 {
-  "version": 3,
+  "version": 1,
   "tags": [
     {
       "tag": "example-20",
