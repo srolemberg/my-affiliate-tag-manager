@@ -1,6 +1,6 @@
 # My Affiliate Tags
 
-A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on hosts whose name contains `amazon.com`. Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
+A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on `amazon.com` and its domain variants (such as `www.amazon.com` and `amazon.com.br`). Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
 
 ## Installation
 
@@ -31,8 +31,9 @@ On other domains, the popup displays a message that the domain is not supported 
 
 On the options page, you can:
 
-- Add tags with a required original Amazon URL containing the same `tag` value, and an optional description.
-- Edit tags, descriptions, and original URLs in a batch using **Save changes**. Edited URLs must remain on a supported Amazon domain and contain that record's tag.
+- Add a record using its required original URL and an optional description. The key is derived from the URL's single `tag` parameter; the URL must be a valid HTTP(S) URL on a supported Amazon domain. URLs with multiple distinct `tag` values are rejected.
+- If the URL derives a key already in the list, adding is disabled and an error appears below the URL field.
+- Edit descriptions and original URLs in a batch using **Save changes**. The displayed key is read-only and changes when the URL is edited; the URL must remain valid and the derived key unique. Invalid or duplicate URLs show an error below the field and block saving.
 - Delete an individual tag after confirmation.
 - Delete all tags after two confirmations.
 - Import a JSON file or export the current list.
@@ -56,7 +57,7 @@ The exported file uses this format:
 }
 ```
 
-You can also import an array of strings or records in the form `{ "tag": "...", "description": "...", "url": "..." }`. Older records without URLs remain importable, and any `lastAccessed` value in an imported record is ignored; new URLs are validated when supplied. Importing merges the data with existing tags and removes duplicates. The description is optional.
+You can also import an array of strings or records in the form `{ "tag": "...", "description": "...", "url": "..." }`. Older records without URLs remain importable, and any `lastAccessed` value in an imported record is ignored; supplied URLs must be valid HTTP(S) Amazon URLs with exactly one distinct tag matching the record key. Importing merges the data with existing tags and removes duplicates. The description is optional.
 
 ## Internationalization
 

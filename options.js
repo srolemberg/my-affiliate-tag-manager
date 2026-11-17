@@ -6,9 +6,11 @@
  */
 const tagList = document.getElementById('tag-list');
 const addForm = document.getElementById('add-form');
-const newTagInput = document.getElementById('new-tag');
 const newDescriptionInput = document.getElementById('new-description');
 const newUrlInput = document.getElementById('new-url');
+const newTagPreview = document.getElementById('new-tag-preview');
+const addError = document.getElementById('add-error');
+const addButton = document.getElementById('add-button');
 const importFileInput = document.getElementById('import-file');
 const statusElement = document.getElementById('status');
 const saveTagsButton = document.getElementById('save-tags-button');
@@ -46,6 +48,7 @@ function renderTags() {
     saveTagsButton.disabled = true;
     exportButton.disabled = savedTags.length === 0;
     deleteAllButton.disabled = savedTags.length === 0;
+    updateAddFormState();
 
     if (savedTags.length === 0) {
         const emptyItem = document.createElement('li');
@@ -59,16 +62,10 @@ function renderTags() {
         const fields = document.createElement('div');
         fields.className = 'tag-fields';
 
-        const tagLabel = document.createElement('label');
+        item.dataset.originalTag = entry.tag;
+        const tagLabel = document.createElement('div');
+        tagLabel.className = 'tag-key-display';
         tagLabel.textContent = chrome.i18n.getMessage('currentKeyLabel', entry.tag);
-        const tagInput = document.createElement('input');
-        tagInput.value = entry.tag;
-        tagInput.dataset.originalTag = entry.tag;
-        tagInput.setAttribute(
-            'aria-label',
-            chrome.i18n.getMessage('editKeyAriaLabel', entry.tag),
-        );
-        tagLabel.append(tagInput);
 
         const descriptionLabel = document.createElement('label');
         descriptionLabel.textContent =
@@ -88,8 +85,10 @@ function renderTags() {
         );
         descriptionLabel.append(descriptionInput);
         const urlLabel = document.createElement('label');
+        urlLabel.className = 'tag-url-field';
         urlLabel.textContent = chrome.i18n.getMessage('originalUrlLabel');
         const urlInput = document.createElement('input');
+        urlInput.className = 'tag-url-input';
         urlInput.type = 'url';
         urlInput.required = true;
         urlInput.value = entry.url;
@@ -99,7 +98,10 @@ function renderTags() {
             'aria-label',
             chrome.i18n.getMessage('editOriginalUrlAriaLabel', entry.tag),
         );
-        urlLabel.append(urlInput);
+        const urlError = document.createElement('output');
+        urlError.className = 'tag-url-error';
+        urlError.setAttribute('aria-live', 'polite');
+        urlLabel.append(urlInput, urlError);
         fields.append(tagLabel, descriptionLabel, urlLabel);
 
         const actions = document.createElement('div');
@@ -135,6 +137,17 @@ function renderTags() {
             input.addEventListener('input', updateSaveButtonState);
         },
     );
+    tagList.querySelectorAll('.tag-url-input').forEach((input) => {
+        input.addEventListener('input', () => {
+            const keyDisplay = input.closest('li').querySelector('.tag-key-display');
+            const tag = getTagFromAmazonUrl(input.value);
+            keyDisplay.textContent = chrome.i18n.getMessage(
+                'currentKeyLabel',
+                tag || chrome.i18n.getMessage('invalidTagUrlKey'),
+            );
+            updateSaveButtonState();
+        });
+    });
     updateSaveButtonState();
 }
 
@@ -147,15 +160,14 @@ function getPendingUpdates() {
         .map(
             /** Converts an item's fields into an update. */
             (item) => {
-            const [tagInput, descriptionInput, urlInput] =
-                item.querySelectorAll('input');
-            if (!tagInput || !descriptionInput || !urlInput) {
+            const [descriptionInput, urlInput] = item.querySelectorAll('input');
+            if (!descriptionInput || !urlInput) {
                 return null;
             }
 
             return {
-                oldTag: tagInput.dataset.originalTag,
-                tag: tagInput.value.trim(),
+                oldTag: item.dataset.originalTag,
+                tag: getTagFromAmazonUrl(urlInput.value),
                 description: descriptionInput.value.trim(),
                 originalDescription: descriptionInput.dataset.originalDescription,
                 url: urlInput.value.trim(),
@@ -177,9 +189,39 @@ function getPendingUpdates() {
         );
 }
 
-/** Enables saving only when there are pending changes. */
+/** Validates edited URLs and enables saving only for unique valid updates. */
 function updateSaveButtonState() {
-    saveTagsButton.disabled = getPendingUpdates().length === 0;
+    const urlInputs = [...tagList.querySelectorAll('.tag-url-input')];
+    const errors = getTagUrlValidationErrors(urlInputs.map((input) => ({
+        originalTag: input.dataset.originalTag,
+        originalUrl: input.dataset.originalUrl,
+        url: input.value,
+    })));
+    let hasInvalidUpdate = false;
+    for (const [index, input] of urlInputs.entries()) {
+        const validationError = errors[index];
+        const error = validationError?.type === 'invalid'
+            ? chrome.i18n.getMessage('invalidAmazonTagUrl')
+            : validationError?.type === 'duplicate'
+                ? chrome.i18n.getMessage(
+                    'duplicateTagAddError',
+                    validationError.tag,
+                )
+                : '';
+        const errorElement = input
+            .closest('label')
+            .querySelector('.tag-url-error');
+        errorElement.textContent = error;
+        if (error) {
+            input.setAttribute('aria-invalid', 'true');
+            hasInvalidUpdate = true;
+        } else {
+            input.removeAttribute('aria-invalid');
+        }
+    }
+
+    saveTagsButton.disabled =
+        getPendingUpdates().length === 0 || hasInvalidUpdate;
 }
 
 /**
@@ -197,15 +239,30 @@ async function loadTags() {
     }
 }
 
+/** Validates the add URL and blocks invalid or duplicate keys. */
+function updateAddFormState() {
+    const url = newUrlInput.value.trim();
+    const tag = getTagFromAmazonUrl(newUrlInput.value);
+    const validUrl = isValidAmazonTagUrl(url, tag);
+    const duplicate = hasTagEntry(tag, savedTags);
+    addButton.disabled = !validUrl || duplicate;
+    addError.textContent = duplicate
+        ? chrome.i18n.getMessage('duplicateTagAddError', tag)
+        : url && !validUrl
+            ? chrome.i18n.getMessage('invalidAmazonTagUrl')
+            : '';
+}
+
 /** Validates and adds a tag and its original Amazon URL. */
 addForm.addEventListener('submit', async (event) => {
     event.preventDefault();
-    const tag = newTagInput.value.trim();
     const url = newUrlInput.value.trim();
-    if (!tag) {
-        statusElement.textContent = chrome.i18n.getMessage('validTagRequired');
+    const tag = getTagFromAmazonUrl(url);
+    updateAddFormState();
+    if (hasTagEntry(tag, savedTags)) {
         return;
     }
+
     if (!isValidAmazonTagUrl(url, tag)) {
         statusElement.textContent = chrome.i18n.getMessage('invalidAmazonTagUrl');
         return;
@@ -220,9 +277,10 @@ addForm.addEventListener('submit', async (event) => {
                 url,
             }],
         });
-        newTagInput.value = '';
         newDescriptionInput.value = '';
         newUrlInput.value = '';
+        newTagPreview.textContent = '';
+        updateAddFormState();
         statusElement.textContent = chrome.i18n.getMessage('tagAdded');
     } catch (error) {
         statusElement.textContent =
@@ -230,10 +288,19 @@ addForm.addEventListener('submit', async (event) => {
     }
 });
 
+newUrlInput.addEventListener('input', () => {
+    const tag = getTagFromAmazonUrl(newUrlInput.value);
+    newTagPreview.textContent = tag
+        ? chrome.i18n.getMessage('currentKeyLabel', tag)
+        : '';
+    updateAddFormState();
+});
+
 /** Persists all pending edits in a single operation. */
 saveTagsButton.addEventListener('click', async () => {
+    updateSaveButtonState();
     const updates = getPendingUpdates();
-    if (updates.length === 0) {
+    if (saveTagsButton.disabled || updates.length === 0) {
         return;
     }
 
@@ -369,8 +436,11 @@ importFileInput.addEventListener('change', async () => {
 chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local' && changes.savedTags) {
         savedTags = normalizeTagEntries(changes.savedTags.newValue);
+        updateAddFormState();
         if (getPendingUpdates().length === 0) {
             renderTags();
+        } else {
+            updateSaveButtonState();
         }
     }
 });

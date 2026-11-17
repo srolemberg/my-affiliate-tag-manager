@@ -107,6 +107,14 @@ test('extracts unique tag values only from supported Amazon URLs', () => {
         JSON.parse(JSON.stringify(api.getAmazonTags('not a URL'))),
         [],
     );
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(
+            api.getAmazonTagEntries(
+                'https://www.amazon.com/?tag=one-20&tag=two-20',
+            ),
+        )),
+        [],
+    );
 });
 
 test('adds, merges, edits, and deletes tags in storage', async () => {
@@ -118,11 +126,9 @@ test('adds, merges, edits, and deletes tags in storage', async () => {
         type: 'add',
         tags: [
             {
-                tag: 'existing-20',
                 url: 'https://www.amazon.com/?tag=existing-20',
             },
             {
-                tag: 'new-20',
                 description: 'New account',
                 url: 'https://www.amazon.com/?tag=new-20',
             },
@@ -135,12 +141,12 @@ test('adds, merges, edits, and deletes tags in storage', async () => {
             {tag: 'new-20', description: 'New account', url: 'https://www.amazon.com/?tag=new-20'},
         ],
     );
+    assert.equal(added.length, 2);
 
     const updated = await api.mutateStoredTags({
         type: 'updateMany',
         updates: [{
             oldTag: 'new-20',
-            tag: 'renamed-20',
             description: 'Renamed',
             url: 'https://www.amazon.com/?tag=renamed-20',
         }],
@@ -174,14 +180,11 @@ test('captures full URLs, preserves an existing URL, and updates last access tim
             lastAccessed: '',
         }],
     });
-    const visitedUrl = 'https://www.amazon.com/dp/another?tag=existing-20&tag=new-20';
+    const visitedUrl = 'https://www.amazon.com/dp/another?tag=new-20';
 
     assert.deepEqual(
         JSON.parse(JSON.stringify(api.getAmazonTagEntries(visitedUrl))),
-        [
-            {tag: 'existing-20', url: visitedUrl},
-            {tag: 'new-20', url: visitedUrl},
-        ],
+        [{tag: 'new-20', url: visitedUrl}],
     );
     await api.mutateStoredTags({
         type: 'discover',
@@ -190,8 +193,8 @@ test('captures full URLs, preserves an existing URL, and updates last access tim
 
     assert.equal(storage.savedTags[0].url, savedUrl);
     assert.equal(storage.savedTags[0].lastAccessed, undefined);
+    assert.equal(storage.savedTags[1].tag, 'new-20');
     assert.equal(storage.savedTags[1].url, visitedUrl);
-    assert.equal(storage.savedTags[1].lastAccessed, undefined);
     assert.equal(storage.lastAccessedTag.tag, 'new-20');
     assert.ok(Date.parse(storage.lastAccessedTag.lastAccessed));
 });
@@ -211,8 +214,7 @@ test('records access through popup requests and requires valid original URLs', a
             type: 'updateMany',
             updates: [{
                 oldTag: 'account-20',
-                tag: 'renamed-20',
-                url: originalUrl,
+                url: 'https://www.amazon.com/dp/item?tag=renamed-20&tag=other-20',
             }],
         }),
         /invalidAmazonTagUrl/,
@@ -221,6 +223,15 @@ test('records access through popup requests and requires valid original URLs', a
         api.mutateStoredTags({
             type: 'add',
             tags: [{tag: 'other-20', url: originalUrl}],
+        }),
+        /invalidAmazonTagUrl/,
+    );
+    await assert.rejects(
+        api.mutateStoredTags({
+            type: 'add',
+            tags: [{
+                url: 'https://www.amazon.com/?tag=first-20&tag=second-20',
+            }],
         }),
         /invalidAmazonTagUrl/,
     );
@@ -285,12 +296,10 @@ test('rejects duplicate edits without changing stored tags', async () => {
             updates: [
                 {
                     oldTag: 'first-20',
-                    tag: 'same-20',
                     url: 'https://www.amazon.com/?tag=same-20',
                 },
                 {
                     oldTag: 'second-20',
-                    tag: 'same-20',
                     url: 'https://www.amazon.com/?tag=same-20',
                 },
             ],

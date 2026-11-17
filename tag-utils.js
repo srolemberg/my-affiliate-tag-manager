@@ -43,6 +43,69 @@ function normalizeTagEntries(entries) {
 }
 
 /**
+ * Checks whether a key already exists in a list of tag records.
+ * @param {string|undefined} tag Key to find.
+ * @param {Array<string|{tag: string}>|undefined} entries Records to search.
+ * @returns {boolean} Whether the key is already present.
+ */
+function hasTagEntry(tag, entries) {
+    if (typeof tag !== 'string' || !tag.trim() || !Array.isArray(entries)) {
+        return false;
+    }
+
+    const normalizedTag = tag.trim();
+    return entries.some((entry) => {
+        const entryTag = typeof entry === 'string' ? entry : entry?.tag;
+        return typeof entryTag === 'string' && entryTag.trim() === normalizedTag;
+    });
+}
+
+/**
+ * Validates only changed URLs and detects duplicate resulting keys.
+ * @param {Array<{originalTag: string, originalUrl: string, url: string}>} entries URL edits.
+ * @returns {Array<null|{type: 'invalid'}|{type: 'duplicate', tag: string}>} Per-entry errors.
+ */
+function getTagUrlValidationErrors(entries) {
+    if (!Array.isArray(entries)) {
+        return [];
+    }
+
+    const candidates = entries.map((entry) => {
+        const url = typeof entry?.url === 'string' ? entry.url.trim() : '';
+        const originalUrl =
+            typeof entry?.originalUrl === 'string' ? entry.originalUrl.trim() : '';
+        const changed = url !== originalUrl;
+        const derivedTag = changed ? getTagFromAmazonUrl(url) : '';
+        const valid = !changed || isValidAmazonTagUrl(url, derivedTag);
+        const tag = changed && valid ? derivedTag : entry?.originalTag;
+        return {
+            changed,
+            tag,
+            valid,
+        };
+    });
+    const tagCounts = new Map();
+    for (const candidate of candidates) {
+        if (typeof candidate.tag === 'string' && candidate.tag) {
+            tagCounts.set(candidate.tag, (tagCounts.get(candidate.tag) || 0) + 1);
+        }
+    }
+
+    return candidates.map((candidate) => {
+        if (!candidate.changed) {
+            return null;
+        }
+        if (!candidate.valid) {
+            return {type: 'invalid'};
+        }
+        if ((tagCounts.get(candidate.tag) || 0) > 1) {
+            return {type: 'duplicate', tag: candidate.tag};
+        }
+        return null;
+    });
+}
+
+/**
  * Selects the most recent legacy per-tag access timestamp for migration.
  * @param {Array<{tag: string, lastAccessed: string}>|undefined} entries Legacy records.
  * @returns {{tag: string, lastAccessed: string}|null} The latest valid timestamp.
@@ -66,25 +129,47 @@ function getLatestAccessRecord(entries) {
 }
 
 /**
- * Checks whether a saved URL is on a supported Amazon domain and contains its tag.
- * @param {string|undefined} url URL to validate.
- * @param {string} tag Tag key the URL must contain.
- * @returns {boolean} Whether the URL is valid for this tag.
+ * Returns the single tag key represented by a valid supported HTTP(S) URL.
+ * @param {string|undefined} url URL to inspect.
+ * @returns {string} The URL's tag key, or an empty string when invalid or ambiguous.
  */
-function isValidAmazonTagUrl(url, tag) {
-    if (typeof tag !== 'string' || !tag.trim() || !isAmazonDomainUrl(url)) {
-        return false;
+function getTagFromAmazonUrl(url) {
+    if (!isAmazonDomainUrl(url)) {
+        return '';
     }
 
     try {
-        return new URL(url).searchParams.getAll('tag').includes(tag.trim());
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+            return '';
+        }
+
+        const tagValues = parsedUrl.searchParams.getAll('tag');
+        if (tagValues.length === 0 || tagValues.some((tag) => !tag.trim())) {
+            return '';
+        }
+
+        const uniqueTags = [...new Set(tagValues.map((tag) => tag.trim()))];
+        return uniqueTags.length === 1 ? uniqueTags[0] : '';
     } catch {
-        return false;
+        return '';
     }
 }
 
 /**
- * Checks whether a URL's hostname contains `amazon.com`.
+ * Checks whether a URL represents exactly the supplied tag key.
+ * @param {string|undefined} url URL to validate.
+ * @param {string} tag Tag key expected in the URL.
+ * @returns {boolean} Whether the URL is valid for this tag.
+ */
+function isValidAmazonTagUrl(url, tag) {
+    return typeof tag === 'string' &&
+        Boolean(tag.trim()) &&
+        getTagFromAmazonUrl(url) === tag.trim();
+}
+
+/**
+ * Checks whether the hostname is `amazon.com` or has it as a domain boundary.
  * @param {string|undefined} url URL to check.
  * @returns {boolean} Whether the URL belongs to a domain considered Amazon.
  */
@@ -94,7 +179,8 @@ function isAmazonDomainUrl(url) {
     }
 
     try {
-        return new URL(url).hostname.includes('amazon.com');
+        const hostname = new URL(url).hostname;
+        return /(^|\.)amazon\.com(\.|$)/.test(hostname);
     } catch {
         return false;
     }

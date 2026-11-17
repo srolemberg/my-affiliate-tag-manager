@@ -12,10 +12,10 @@
             padding: 0 16px;
         }
 
-        form {
+        #add-form {
             align-items: end;
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
             margin: 16px 0;
         }
@@ -44,10 +44,28 @@
         }
 
         .tag-fields {
-            align-items: end;
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
+        }
+
+        .tag-url-field {
+            grid-column: 1 / -1;
+        }
+
+        .add-url-field {
+            grid-column: 1 / -1;
+        }
+
+        #add-error {
+            color: #b00020;
+            grid-column: 1 / -1;
+            min-height: 1.2em;
+        }
+
+        .tag-url-error {
+            color: #b00020;
+            min-height: 1.2em;
         }
 
         .tag-actions {
@@ -71,16 +89,15 @@
 <p data-i18n="optionsIntro">As tags encontradas nas URLs da Amazon são salvas automaticamente neste navegador.</p>
 
 <form id="add-form">
-    <label for="new-tag"><span data-i18n="tagKey">Chave</span>
-        <input id="new-tag" name="tag" required>
-    </label>
     <label for="new-description"><span data-i18n="optionalDescription">Descrição (opcional)</span>
         <input id="new-description" name="description">
     </label>
-    <label for="new-url"><span data-i18n="originalUrlLabel">URL original</span>
+    <label class="add-url-field" for="new-url"><span data-i18n="originalUrlLabel">URL original</span>
         <input id="new-url" name="url" type="url" required>
     </label>
-    <button type="submit" data-i18n="addButton">Adicionar</button>
+    <output id="add-error" class="add-url-field" aria-live="polite"></output>
+    <output id="new-tag-preview" class="add-url-field" aria-live="polite"></output>
+    <button id="add-button" type="submit" disabled data-i18n="addButton">Adicionar</button>
 </form>
 
 <h2 data-i18n="savedTagsHeading">Tags salvas</h2>

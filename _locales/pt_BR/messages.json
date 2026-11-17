@@ -319,5 +319,16 @@
   },
   "invalidAmazonTagUrl": {
     "message": "Informe uma URL da Amazon válida que contenha esta tag."
+  },
+  "invalidTagUrlKey": {
+    "message": "A URL não identifica uma chave válida"
+  },
+  "duplicateTagAddError": {
+    "message": "A chave \"$1\" já está salva.",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
   }
 }

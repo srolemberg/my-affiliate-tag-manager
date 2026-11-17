@@ -319,5 +319,16 @@
   },
   "invalidAmazonTagUrl": {
     "message": "Enter a supported Amazon URL containing this tag."
+  },
+  "invalidTagUrlKey": {
+    "message": "URL does not identify a valid tag key"
+  },
+  "duplicateTagAddError": {
+    "message": "The key \"$1\" is already saved.",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
   }
 }

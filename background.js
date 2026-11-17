@@ -69,12 +69,30 @@ function mutateStoredTags(operation) {
                     if (
                         !Array.isArray(operation.tags) ||
                         operation.tags.some(
-                            (entry) => !isValidAmazonTagUrl(entry?.url, entry?.tag),
+                            (entry) => (
+                                !entry ||
+                                typeof entry !== 'object' ||
+                                !isValidAmazonTagUrl(
+                                    entry.url,
+                                    getTagFromAmazonUrl(entry.url),
+                                ) ||
+                                (entry.description !== undefined &&
+                                    typeof entry.description !== 'string') ||
+                                (entry.tag !== undefined &&
+                                    entry.tag !== getTagFromAmazonUrl(entry.url))
+                            ),
                         )
                     ) {
                         throw new Error(chrome.i18n.getMessage('invalidAmazonTagUrl'));
                     }
-                    updatedTags = mergeTagEntries(tags, operation.tags);
+                    updatedTags = mergeTagEntries(
+                        tags,
+                        operation.tags.map((entry) => ({
+                            tag: getTagFromAmazonUrl(entry.url),
+                            description: entry.description,
+                            url: entry.url,
+                        })),
+                    );
                     break;
                 case 'discover': {
                     if (!Array.isArray(operation.tags)) {
@@ -123,17 +141,19 @@ function mutateStoredTags(operation) {
                             throw new Error(chrome.i18n.getMessage('invalidUpdate'));
                         }
 
-                        const newTag =
-                            typeof update.tag === 'string' ? update.tag.trim() : '';
+                        const newTag = getTagFromAmazonUrl(update.url);
                         if (
                             typeof update.oldTag !== 'string' ||
-                            !newTag ||
                             (update.description !== undefined &&
                                 typeof update.description !== 'string')
                         ) {
                             throw new Error(chrome.i18n.getMessage('invalidKeysOrDescriptions'));
                         }
-                        if (!isValidAmazonTagUrl(update.url, newTag)) {
+                        if (
+                            !newTag ||
+                            !isValidAmazonTagUrl(update.url, newTag) ||
+                            (update.tag !== undefined && update.tag !== newTag)
+                        ) {
                             throw new Error(chrome.i18n.getMessage('invalidAmazonTagUrl'));
                         }
 
@@ -246,22 +266,12 @@ function mutateStoredTags(operation) {
  * @returns {{tag: string, url: string}[]} Detected tag records.
  */
 function getAmazonTagEntries(url) {
-    if (!url) {
+    const tag = getTagFromAmazonUrl(url);
+    if (!tag) {
         return [];
     }
 
-    try {
-        const parsedUrl = new URL(url);
-        if (!isAmazonDomainUrl(url)) {
-            return [];
-        }
-
-        return normalizeTagEntries(parsedUrl.searchParams.getAll('tag')).map(
-            (entry) => ({tag: entry.tag, url}),
-        );
-    } catch {
-        return [];
-    }
+    return [{tag, url}];
 }
 
 /**
@@ -270,7 +280,17 @@ function getAmazonTagEntries(url) {
  * @returns {string[]} Detected tag values.
  */
 function getAmazonTags(url) {
-    return getAmazonTagEntries(url).map((entry) => entry.tag);
+    if (!url || !isAmazonDomainUrl(url)) {
+        return [];
+    }
+
+    try {
+        return normalizeTagEntries(new URL(url).searchParams.getAll('tag')).map(
+            (entry) => entry.tag,
+        );
+    } catch {
+        return [];
+    }
 }
 
 /**

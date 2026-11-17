@@ -49,6 +49,44 @@ test('returns an empty list when tag entries are not an array', () => {
     );
 });
 
+test('detects an existing key without matching invalid or different keys', () => {
+    assert.equal(
+        utilities.hasTagEntry(' account-20 ', [{tag: 'account-20'}]),
+        true,
+    );
+    assert.equal(utilities.hasTagEntry('account-20', ['account-20']), true);
+    assert.equal(utilities.hasTagEntry('other-20', [{tag: 'account-20'}]), false);
+    assert.equal(utilities.hasTagEntry('', [{tag: 'account-20'}]), false);
+    assert.equal(utilities.hasTagEntry('account-20', null), false);
+});
+
+test('reports URL errors only for changed fields that are invalid or duplicate', () => {
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(utilities.getTagUrlValidationErrors([
+            {
+                originalTag: 'legacy-20',
+                originalUrl: '',
+                url: '',
+            },
+            {
+                originalTag: 'first-20',
+                originalUrl: 'https://www.amazon.com/?tag=first-20',
+                url: 'https://aamazon.com/?tag=first-20',
+            },
+            {
+                originalTag: 'second-20',
+                originalUrl: 'https://www.amazon.com/?tag=second-20',
+                url: 'https://www.amazon.com/?tag=first-20',
+            },
+        ]))),
+        [
+            null,
+            {type: 'invalid'},
+            {type: 'duplicate', tag: 'first-20'},
+        ],
+    );
+});
+
 test('validates that the original URL is a supported Amazon URL containing its tag', () => {
     assert.equal(
         utilities.isValidAmazonTagUrl('https://www.amazon.com/dp/item?tag=account-20', 'account-20'),
@@ -65,10 +103,53 @@ test('validates that the original URL is a supported Amazon URL containing its t
     assert.equal(utilities.isValidAmazonTagUrl('', 'account-20'), false);
 });
 
+test('derives one tag from a valid HTTP(S) URL and rejects ambiguous or invalid URLs', () => {
+    assert.equal(
+        utilities.getTagFromAmazonUrl('https://www.amazon.com/?tag=account-20'),
+        'account-20',
+    );
+    assert.equal(
+        utilities.getTagFromAmazonUrl('http://www.amazon.com/?tag=account-20'),
+        'account-20',
+    );
+    assert.equal(
+        utilities.getTagFromAmazonUrl('ftp://www.amazon.com/?tag=account-20'),
+        '',
+    );
+    assert.equal(
+        utilities.getTagFromAmazonUrl('https://www.amazon.com/?tag=one&tag=two'),
+        '',
+    );
+    assert.equal(
+        utilities.getTagFromAmazonUrl('https://www.amazon.com/?tag='),
+        '',
+    );
+});
+
 test('recognizes supported Amazon hostnames and rejects invalid URLs', () => {
     assert.equal(utilities.isAmazonDomainUrl('https://www.amazon.com/dp/item'), true);
+    assert.equal(utilities.isAmazonDomainUrl('https://amazon.com/'), true);
     assert.equal(utilities.isAmazonDomainUrl('https://amazon.com.br/'), true);
+    assert.equal(utilities.isAmazonDomainUrl('https://www.amazon.com.br/'), true);
+    assert.equal(utilities.isAmazonDomainUrl('https://aamazon.com/'), false);
+    assert.equal(utilities.isAmazonDomainUrl('https://notamazon.com/'), false);
+    assert.equal(utilities.isAmazonDomainUrl('https://amazon.comexample/'), false);
     assert.equal(utilities.isAmazonDomainUrl('https://example.com/'), false);
     assert.equal(utilities.isAmazonDomainUrl('not a URL'), false);
     assert.equal(utilities.isAmazonDomainUrl(undefined), false);
+});
+
+test('requires a valid Amazon domain and a tag matching the URL key', () => {
+    assert.equal(
+        utilities.isValidAmazonTagUrl('https://aamazon.com/?tag=account-20', 'account-20'),
+        false,
+    );
+    assert.equal(
+        utilities.isValidAmazonTagUrl('https://amazon.com.br/?tag=account-20', 'account-20'),
+        true,
+    );
+    assert.equal(
+        utilities.isValidAmazonTagUrl('https://www.amazon.com/?tag=other-20', 'account-20'),
+        false,
+    );
 });
