@@ -24,6 +24,7 @@ On a supported domain, the popup:
 - Lets you select a saved tag and open its original URL in the current tab or a new tab.
 - Updates the global last-access record to the selected tag when it is opened.
 - Provides a link to the tag management page.
+- Shows the extension version and a project link labeled with the author's name in a light-gray footer shared with the options page.
 
 On other domains, the popup displays a message that the domain is not supported and provides a link to manage tags.
 
@@ -37,6 +38,7 @@ On the options page, you can:
 - Delete an individual tag after confirmation.
 - Delete all tags after two confirmations.
 - Import a JSON file or export the current list.
+- Shows the extension version and a project link labeled with the author's name in the shared light-gray footer.
 
 After a supported Amazon page's main-frame navigation completes, tags in its URL are saved with the full URL and the single global last-access record is set to the last tag in that URL. Opening a saved URL in the popup also replaces that global record. Switching focus to an already open tab does not update it. Existing per-tag access timestamps are consolidated to the latest one when migrating stored data. The global access record is shown only in the popup and is not included in exports. Tag keys remain unique. Existing data without a saved URL stays compatible; a later completed navigation can populate it, or it can be entered in tag management.
 

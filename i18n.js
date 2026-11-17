@@ -17,6 +17,13 @@ function localizeDocument() {
         }
     });
 
+    document.querySelectorAll('[data-i18n-title]').forEach((element) => {
+        const message = chrome.i18n.getMessage(element.dataset.i18nTitle);
+        if (message) {
+            element.setAttribute('title', message);
+        }
+    });
+
     const title = document.querySelector('title[data-i18n]');
     if (title) {
         const message = chrome.i18n.getMessage(title.dataset.i18n);

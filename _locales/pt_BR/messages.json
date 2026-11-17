@@ -30,7 +30,10 @@
     "message": "A sessão é gerenciada pela Amazon; por isso, a extensão não pode garantir que a alteração tenha efeito imediato."
   },
   "manageTagsLink": {
-    "message": "Configurar e gerenciar tags"
+    "message": "Abrir configurações e gerenciar tags"
+  },
+  "manageTagsLinkAriaLabel": {
+    "message": "Abrir configurações e gerenciar tags"
   },
   "invalidDomainUnavailable": {
     "message": "Não foi possível identificar um domínio válido."
@@ -330,5 +333,16 @@
         "content": "$1"
       }
     }
+  },
+  "extensionFooter": {
+    "message": "Versão $1 · Autor:",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "extensionFooterFrameTitle": {
+    "message": "Versão da extensão e autor do projeto"
   }
 }

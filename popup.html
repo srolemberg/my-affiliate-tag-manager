@@ -43,6 +43,14 @@
         #status {
             min-height: 1.2em;
         }
+
+        #extension-footer {
+            border: 0;
+            display: block;
+            height: 36px;
+            margin: 16px -16px -16px;
+            width: calc(100% + 32px);
+        }
     </style>
 </head>
 <body>
@@ -66,7 +74,8 @@
     </form>
     <p id="status" role="status" aria-live="polite"></p>
 </main>
-<a id="manage-tags-link" href="options.html" target="_blank" data-i18n="manageTagsLink">Configurar e gerenciar tags</a>
+<a id="manage-tags-link" href="options.html" target="_blank" data-i18n="manageTagsLink" data-i18n-aria-label="manageTagsLinkAriaLabel" data-i18n-title="manageTagsLinkAriaLabel" title="Abrir configurações e gerenciar tags">Configurar e gerenciar tags</a>
+<iframe id="extension-footer" src="footer.html" data-i18n-aria-label="extensionFooterFrameTitle" title="Extension information"></iframe>
 <script src="i18n.js"></script>
 <script src="tag-utils.js"></script>
 <script src="popup.js"></script>

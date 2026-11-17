@@ -30,7 +30,10 @@
     "message": "The session is managed by Amazon, so the extension cannot guarantee that the change will take effect immediately."
   },
   "manageTagsLink": {
-    "message": "Configure and manage tags"
+    "message": "Open settings and manage tags"
+  },
+  "manageTagsLinkAriaLabel": {
+    "message": "Open settings and manage tags"
   },
   "invalidDomainUnavailable": {
     "message": "Could not identify a valid domain."
@@ -330,5 +333,16 @@
         "content": "$1"
       }
     }
+  },
+  "extensionFooter": {
+    "message": "Version $1 · Author:",
+    "placeholders": {
+      "version": {
+        "content": "$1"
+      }
+    }
+  },
+  "extensionFooterFrameTitle": {
+    "message": "Extension version and project author"
   }
 }
