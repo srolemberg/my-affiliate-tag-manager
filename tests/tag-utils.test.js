@@ -1,3 +1,4 @@
+/** Tests normalization, URL validation, and migration helpers in tag-utils.js. */
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -49,18 +50,7 @@ test('returns an empty list when tag entries are not an array', () => {
     );
 });
 
-test('detects an existing key without matching invalid or different keys', () => {
-    assert.equal(
-        utilities.hasTagEntry(' account-20 ', [{tag: 'account-20'}]),
-        true,
-    );
-    assert.equal(utilities.hasTagEntry('account-20', ['account-20']), true);
-    assert.equal(utilities.hasTagEntry('other-20', [{tag: 'account-20'}]), false);
-    assert.equal(utilities.hasTagEntry('', [{tag: 'account-20'}]), false);
-    assert.equal(utilities.hasTagEntry('account-20', null), false);
-});
-
-test('reports URL errors only for changed fields that are invalid or duplicate', () => {
+test('validates changed URLs and reports invalid or duplicate keys per field', () => {
     assert.deepEqual(
         JSON.parse(JSON.stringify(utilities.getTagUrlValidationErrors([
             {
@@ -82,8 +72,32 @@ test('reports URL errors only for changed fields that are invalid or duplicate',
         [
             null,
             {type: 'invalid'},
-            {type: 'duplicate', tag: 'first-20'},
+            null,
         ],
+    );
+
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(utilities.getTagUrlValidationErrors([
+            {
+                originalTag: 'account-20',
+                originalUrl: 'https://www.amazon.com/?tag=account-20',
+                url: 'https://www.amazon.com/?tag=account-20',
+            },
+            {
+                originalTag: '',
+                originalUrl: '',
+                url: 'https://www.amazon.com/?tag=account-20',
+                validate: true,
+            },
+        ]))),
+        [null, {type: 'duplicate', tag: 'account-20'}],
+    );
+
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(utilities.getTagUrlValidationErrors([
+            {url: '', originalUrl: '', validate: true},
+        ]))),
+        [{type: 'invalid'}],
     );
 });
 

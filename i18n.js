@@ -1,6 +1,5 @@
 /**
- * Replaces marked HTML text and attributes with messages for the language
- * selected in the browser.
+ * Localizes marked text and attributes using the browser's selected language.
  */
 function localizeDocument() {
     document.querySelectorAll('[data-i18n]').forEach((element) => {
@@ -10,26 +9,25 @@ function localizeDocument() {
         }
     });
 
-    document.querySelectorAll('[data-i18n-aria-label]').forEach((element) => {
-        const message = chrome.i18n.getMessage(element.dataset.i18nAriaLabel);
-        if (message) {
-            element.setAttribute('aria-label', message);
-        }
-    });
-
-    document.querySelectorAll('[data-i18n-title]').forEach((element) => {
-        const message = chrome.i18n.getMessage(element.dataset.i18nTitle);
-        if (message) {
-            element.setAttribute('title', message);
-        }
-    });
-
-    const title = document.querySelector('title[data-i18n]');
-    if (title) {
-        const message = chrome.i18n.getMessage(title.dataset.i18n);
-        if (message) {
-            document.title = message;
-        }
+    const localizedAttributes = [
+        {
+            selector: '[data-i18n-aria-label]',
+            datasetKey: 'i18nAriaLabel',
+            attribute: 'aria-label',
+        },
+        {
+            selector: '[data-i18n-title]',
+            datasetKey: 'i18nTitle',
+            attribute: 'title',
+        },
+    ];
+    for (const {selector, datasetKey, attribute} of localizedAttributes) {
+        document.querySelectorAll(selector).forEach((element) => {
+            const message = chrome.i18n.getMessage(element.dataset[datasetKey]);
+            if (message) {
+                element.setAttribute(attribute, message);
+            }
+        });
     }
 }
 

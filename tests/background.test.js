@@ -1,9 +1,11 @@
+/** Tests service-worker storage mutations, navigation tracking, and badge updates. */
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 
+/** Creates a minimal Chrome event mock that stores its registered listener. */
 function createEvent() {
     return {
         addListener(listener) {
@@ -12,6 +14,11 @@ function createEvent() {
     };
 }
 
+/**
+ * Evaluates the service worker with mocked Chrome APIs and in-memory storage.
+ * @param {Record<string, unknown>} initialStorage Initial local-storage values.
+ * @returns {object} Service-worker API, storage state, badge calls, and Chrome mocks.
+ */
 function createBackgroundHarness(initialStorage = {}) {
     const storage = {...initialStorage};
     const badgeCalls = [];

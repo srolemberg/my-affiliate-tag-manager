@@ -1,7 +1,8 @@
 /**
- * Converts legacy and current formats into unique tag records.
- * @param {Array<string|{tag: string, description?: string, url?: string}>} entries Records to validate.
- * @returns {{tag: string, description: string, url: string}[]} Normalized records.
+ * Normalizes legacy strings and record objects into unique tag records.
+ * Later duplicate records can update metadata while blank values preserve earlier data.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>} entries Records to normalize.
+ * @returns {{tag: string, description: string, url: string}[]} Unique normalized records.
  */
 function normalizeTagEntries(entries) {
     if (!Array.isArray(entries)) {
@@ -43,27 +44,11 @@ function normalizeTagEntries(entries) {
 }
 
 /**
- * Checks whether a key already exists in a list of tag records.
- * @param {string|undefined} tag Key to find.
- * @param {Array<string|{tag: string}>|undefined} entries Records to search.
- * @returns {boolean} Whether the key is already present.
- */
-function hasTagEntry(tag, entries) {
-    if (typeof tag !== 'string' || !tag.trim() || !Array.isArray(entries)) {
-        return false;
-    }
-
-    const normalizedTag = tag.trim();
-    return entries.some((entry) => {
-        const entryTag = typeof entry === 'string' ? entry : entry?.tag;
-        return typeof entryTag === 'string' && entryTag.trim() === normalizedTag;
-    });
-}
-
-/**
- * Validates only changed URLs and detects duplicate resulting keys.
- * @param {Array<{originalTag: string, originalUrl: string, url: string}>} entries URL edits.
- * @returns {Array<null|{type: 'invalid'}|{type: 'duplicate', tag: string}>} Per-entry errors.
+ * Validates changed URL fields and identifies duplicate resulting keys.
+ * Unchanged entries participate in duplicate detection but do not receive errors.
+ * Set `validate` to true to validate a new URL with no saved original value.
+ * @param {Array<{originalTag?: string, originalUrl?: string, url: string, validate?: boolean}>} entries Saved or proposed URL values.
+ * @returns {Array<null|{type: 'invalid'}|{type: 'duplicate', tag: string}>} Error for each entry, if any.
  */
 function getTagUrlValidationErrors(entries) {
     if (!Array.isArray(entries)) {
@@ -74,10 +59,10 @@ function getTagUrlValidationErrors(entries) {
         const url = typeof entry?.url === 'string' ? entry.url.trim() : '';
         const originalUrl =
             typeof entry?.originalUrl === 'string' ? entry.originalUrl.trim() : '';
-        const changed = url !== originalUrl;
+        const changed = entry?.validate === true || url !== originalUrl;
         const derivedTag = changed ? getTagFromAmazonUrl(url) : '';
-        const valid = !changed || isValidAmazonTagUrl(url, derivedTag);
-        const tag = changed && valid ? derivedTag : entry?.originalTag;
+        const valid = !changed || Boolean(derivedTag);
+        const tag = changed ? (valid ? derivedTag : '') : entry?.originalTag;
         return {
             changed,
             tag,
@@ -106,9 +91,9 @@ function getTagUrlValidationErrors(entries) {
 }
 
 /**
- * Selects the most recent legacy per-tag access timestamp for migration.
- * @param {Array<{tag: string, lastAccessed: string}>|undefined} entries Legacy records.
- * @returns {{tag: string, lastAccessed: string}|null} The latest valid timestamp.
+ * Selects the newest valid per-tag timestamp while migrating legacy records.
+ * @param {Array<{tag: string, lastAccessed: string}>|undefined} entries Legacy saved records.
+ * @returns {{tag: string, lastAccessed: string}|null} The latest access record, or null.
  */
 function getLatestAccessRecord(entries) {
     if (!Array.isArray(entries)) {
@@ -129,18 +114,21 @@ function getLatestAccessRecord(entries) {
 }
 
 /**
- * Returns the single tag key represented by a valid supported HTTP(S) URL.
+ * Derives a key from a supported HTTP(S) URL containing one distinct non-empty `tag` value.
  * @param {string|undefined} url URL to inspect.
- * @returns {string} The URL's tag key, or an empty string when invalid or ambiguous.
+ * @returns {string} The derived key, or an empty string for invalid or ambiguous URLs.
  */
 function getTagFromAmazonUrl(url) {
-    if (!isAmazonDomainUrl(url)) {
+    if (typeof url !== 'string' || !url) {
         return '';
     }
 
     try {
         const parsedUrl = new URL(url);
-        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        if (
+            !isAmazonHostname(parsedUrl.hostname) ||
+            (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:')
+        ) {
             return '';
         }
 
@@ -157,10 +145,10 @@ function getTagFromAmazonUrl(url) {
 }
 
 /**
- * Checks whether a URL represents exactly the supplied tag key.
+ * Checks whether a supported URL derives exactly the supplied key.
  * @param {string|undefined} url URL to validate.
- * @param {string} tag Tag key expected in the URL.
- * @returns {boolean} Whether the URL is valid for this tag.
+ * @param {string} tag Expected key.
+ * @returns {boolean} Whether the URL is valid and contains the expected key.
  */
 function isValidAmazonTagUrl(url, tag) {
     return typeof tag === 'string' &&
@@ -169,9 +157,9 @@ function isValidAmazonTagUrl(url, tag) {
 }
 
 /**
- * Checks whether the hostname is `amazon.com` or has it as a domain boundary.
- * @param {string|undefined} url URL to check.
- * @returns {boolean} Whether the URL belongs to a domain considered Amazon.
+ * Checks whether a URL uses `amazon.com`, one of its subdomains, or a regional domain.
+ * @param {string|undefined} url URL to inspect.
+ * @returns {boolean} Whether the URL uses a supported Amazon hostname.
  */
 function isAmazonDomainUrl(url) {
     if (typeof url !== 'string' || !url) {
@@ -179,9 +167,17 @@ function isAmazonDomainUrl(url) {
     }
 
     try {
-        const hostname = new URL(url).hostname;
-        return /(^|\.)amazon\.com(\.|$)/.test(hostname);
+        return isAmazonHostname(new URL(url).hostname);
     } catch {
         return false;
     }
+}
+
+/**
+ * Matches Amazon domain names at label boundaries, including regional domains.
+ * @param {string} hostname Hostname to check.
+ * @returns {boolean} Whether the hostname is supported.
+ */
+function isAmazonHostname(hostname) {
+    return /(^|\.)amazon\.com(\.|$)/.test(hostname);
 }

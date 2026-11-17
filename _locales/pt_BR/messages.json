@@ -5,9 +5,6 @@
   "appDescription": {
     "message": "Uma extensão para gerenciar tags de afiliados."
   },
-  "detectedTagLabel": {
-    "message": "Último acesso à chave:"
-  },
   "checkingTag": {
     "message": "Verificando tag..."
   },
@@ -20,11 +17,8 @@
   "automaticDetectionNote": {
     "message": "As tags são detectadas automaticamente. Use esta lista para abrir uma URL salva."
   },
-  "applyTagButton": {
-    "message": "Aplicar tag e atualizar a aba"
-  },
   "amazonCookieNote": {
-    "message": "A tag de afiliado da Amazon não precisa permanecer visível na barra de endereços durante a navegação. A Amazon grava um cookie no navegador que rastreia as compras durante as próximas 24 horas, mesmo que o parâmetro desapareça da URL."
+    "message": "A tag de afiliado da Amazon não precisa permanecer visível na barra de endereços durante a navegação. A Amazon grava um cookie no navegador que rastreia as compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL."
   },
   "sessionWarning": {
     "message": "A sessão é gerenciada pela Amazon; por isso, a extensão não pode garantir que a alteração tenha efeito imediato."
@@ -32,23 +26,14 @@
   "manageTagsLink": {
     "message": "Abrir configurações e gerenciar tags"
   },
-  "manageTagsLinkAriaLabel": {
-    "message": "Abrir configurações e gerenciar tags"
-  },
   "invalidDomainUnavailable": {
-    "message": "Não foi possível identificar um domínio válido."
+    "message": "Não foi possível identificar a URL da aba ativa."
   },
   "invalidDomainForTags": {
-    "message": "Este domínio não é válido para aplicar tags."
+    "message": "Esta página não pertence a um domínio compatível com a Amazon."
   },
   "invalidDomainValidation": {
     "message": "Não foi possível validar o domínio desta página."
-  },
-  "tagWithoutValue": {
-    "message": "Tag sem valor na URL"
-  },
-  "noTagIdentified": {
-    "message": "Nenhuma tag identificada"
   },
   "addTagInSettings": {
     "message": "Adicione uma tag nas configurações para começar."
@@ -59,22 +44,8 @@
   "selectValidTag": {
     "message": "Selecione uma tag válida."
   },
-  "tabUrlUnavailable": {
-    "message": "A URL desta aba não está disponível."
-  },
-  "applyTagError": {
-    "message": "Não foi possível aplicar a tag: $1",
-    "placeholders": {
-      "error": {
-        "content": "$1"
-      }
-    }
-  },
   "optionsIntro": {
-    "message": "As tags encontradas nas URLs da Amazon são salvas automaticamente neste navegador."
-  },
-  "tagKey": {
-    "message": "Chave"
+    "message": "As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador."
   },
   "optionalDescription": {
     "message": "Descrição (opcional)"
@@ -98,7 +69,7 @@
     "message": "Importar arquivo JSON (mesclar com a lista atual)"
   },
   "manageTagsAriaLabel": {
-    "message": "Importar e exportar tags"
+    "message": "Importar tags de um arquivo JSON"
   },
   "serviceWorkerInvalidResponse": {
     "message": "O service worker retornou uma resposta inválida."
@@ -108,14 +79,6 @@
   },
   "currentKeyLabel": {
     "message": "Chave atual: $1",
-    "placeholders": {
-      "tag": {
-        "content": "$1"
-      }
-    }
-  },
-  "editKeyAriaLabel": {
-    "message": "Editar chave $1",
     "placeholders": {
       "tag": {
         "content": "$1"
@@ -163,9 +126,6 @@
       }
     }
   },
-  "validTagRequired": {
-    "message": "Informe uma tag válida."
-  },
   "tagAdded": {
     "message": "Tag adicionada."
   },
@@ -195,7 +155,7 @@
     "message": "Esta ação é irreversível. Tem certeza de que deseja continuar?"
   },
   "allTagsDeleted": {
-    "message": "Todas as chaves foram removidas. Tags presentes em páginas Amazon poderão ser descobertas novamente."
+    "message": "Todas as chaves foram removidas. Tags presentes em páginas da Amazon poderão ser detectadas novamente."
   },
   "deleteAllError": {
     "message": "Não foi possível excluir as chaves: $1",
@@ -215,7 +175,7 @@
     "message": "O navegador não conseguiu ler o arquivo selecionado."
   },
   "invalidJsonTags": {
-    "message": "O JSON deve conter uma lista \"tags\" não vazia. Cada item deve ter uma tag e uma descrição opcional válida."
+    "message": "O JSON deve conter uma lista \"tags\" não vazia. Cada item deve ter uma chave válida, uma descrição opcional e, se informada, uma URL válida."
   },
   "importedTags": {
     "message": "Tags importadas e mescladas sem duplicatas."
@@ -243,7 +203,7 @@
     "message": "Uma das alterações é inválida."
   },
   "invalidKeysOrDescriptions": {
-    "message": "Informe chaves e descrições válidas."
+    "message": "Os dados das alterações são inválidos."
   },
   "duplicateEditedKey": {
     "message": "A mesma chave não pode ser editada mais de uma vez."
@@ -321,12 +281,12 @@
     }
   },
   "invalidAmazonTagUrl": {
-    "message": "Informe uma URL da Amazon válida que contenha esta tag."
+    "message": "Informe uma URL HTTP ou HTTPS válida de um domínio compatível com a Amazon, com uma tag correspondente à chave."
   },
   "invalidTagUrlKey": {
     "message": "A URL não identifica uma chave válida"
   },
-  "duplicateTagAddError": {
+  "duplicateTagError": {
     "message": "A chave \"$1\" já está salva.",
     "placeholders": {
       "tag": {

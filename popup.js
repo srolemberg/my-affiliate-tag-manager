@@ -1,7 +1,6 @@
 /**
- * Controls the extension popup: validates the active tab's domain, displays
- * last-access time, and opens a saved tag's captured URL in the current or a
- * new tab.
+ * Controls the extension popup: checks the active tab's domain, displays the
+ * global last-access record, and opens saved URLs in the current or a new tab.
  */
 const detectedTagElement = document.getElementById('detected-tag');
 const tagSelect = document.getElementById('saved-tag');
@@ -14,8 +13,8 @@ const domainMessage = document.getElementById('domain-message');
 let savedTags = [];
 
 /**
- * Loads the active tab, displays the detected tag, and populates the tag
- * selector. Hides the controls when the URL is not on a supported domain.
+ * Loads the active tab and saved records, displays the global last-access
+ * record, and populates the selector. Hides controls on unsupported domains.
  * @returns {Promise<void>}
  */
 async function loadPopup() {
@@ -99,7 +98,7 @@ async function loadPopup() {
     }
 }
 
-/** Updates both open buttons when a saved tag is selected. */
+/** Enables URL-opening buttons when the selected record has a valid URL. */
 tagSelect.addEventListener('change', () => {
     const selected = savedTags.find((entry) => entry.tag === tagSelect.value);
     const canOpen = Boolean(selected && isValidAmazonTagUrl(selected.url, selected.tag));
@@ -107,7 +106,7 @@ tagSelect.addEventListener('change', () => {
     openNewTabButton.disabled = !canOpen;
 });
 
-/** Opens the selected record's captured URL and records the access time. */
+/** Opens the selected saved URL and updates the global last-access record. */
 async function openSelectedTag(openInNewTab) {
     const tabId = Number(tagForm.dataset.tabId);
     const selectedTag = tagSelect.value;

@@ -1,8 +1,7 @@
 /**
- * Controls the options page: keeps the local key list synchronized and allows
- * adding, editing, deleting, and importing/exporting saved tag records.
- * Mutations are sent to the service worker to serialize writes to
- * `chrome.storage.local`.
+ * Controls tag management: renders saved records and handles add, edit, delete,
+ * import, and export actions. Mutations go through the service worker to
+ * serialize writes to `chrome.storage.local`.
  */
 const tagList = document.getElementById('tag-list');
 const addForm = document.getElementById('add-form');
@@ -20,8 +19,8 @@ const deleteAllButton = document.getElementById('delete-all-button');
 let savedTags = [];
 
 /**
- * Sends an operation to the service worker and updates the displayed list.
- * @param {{type: string, [key: string]: any}} operation CRUD operation.
+ * Sends a saved-tag operation to the service worker and refreshes the list.
+ * @param {{type: string, [key: string]: any}} operation Mutation to perform.
  * @returns {Promise<void>}
  */
 async function mutateTags(operation) {
@@ -41,7 +40,7 @@ async function mutateTags(operation) {
 }
 
 /**
- * Renders the editing fields and actions for the saved keys.
+ * Renders saved records, their editable fields, and available actions.
  */
 function renderTags() {
     tagList.replaceChildren();
@@ -110,7 +109,7 @@ function renderTags() {
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
         deleteButton.textContent = chrome.i18n.getMessage('deleteButton');
-        /** Confirms and requests deletion of this key. */
+        /** Confirms the request before deleting this record. */
         deleteButton.addEventListener('click', async () => {
             if (!window.confirm(
                 chrome.i18n.getMessage('confirmDeleteTag', entry.tag),
@@ -132,7 +131,7 @@ function renderTags() {
     }
 
     tagList.querySelectorAll('input').forEach(
-        /** Recalculates the button state when any field is edited. */
+        /** Rechecks pending edits whenever a field changes. */
         (input) => {
             input.addEventListener('input', updateSaveButtonState);
         },
@@ -152,13 +151,13 @@ function renderTags() {
 }
 
 /**
- * Reads unsaved changes from the list fields.
- * @returns {{oldTag: string, tag: string, description: string, url: string}[]} Pending changes.
+ * Collects changed record fields and derives each key from its URL.
+ * @returns {{oldTag: string, tag: string, description: string, url: string}[]} Pending updates.
  */
 function getPendingUpdates() {
     return [...tagList.querySelectorAll('li')]
         .map(
-            /** Converts an item's fields into an update. */
+            /** Converts one list item into an update object. */
             (item) => {
             const [descriptionInput, urlInput] = item.querySelectorAll('input');
             if (!descriptionInput || !urlInput) {
@@ -176,7 +175,7 @@ function getPendingUpdates() {
             },
         )
         .filter(
-            /** Discards unchanged items and items without editable fields. */
+            /** Excludes unchanged items and items without the expected inputs. */
             (entry) => entry && (
                 entry.tag !== entry.oldTag ||
                 entry.description !== entry.originalDescription ||
@@ -184,12 +183,12 @@ function getPendingUpdates() {
             ),
         )
         .map(
-            /** Returns only the data needed to persist the update. */
+            /** Removes UI-only fields before sending the updates. */
             ({oldTag, tag, description, url}) => ({oldTag, tag, description, url}),
         );
 }
 
-/** Validates edited URLs and enables saving only for unique valid updates. */
+/** Shows per-field URL errors and enables saving only for valid unique edits. */
 function updateSaveButtonState() {
     const urlInputs = [...tagList.querySelectorAll('.tag-url-input')];
     const errors = getTagUrlValidationErrors(urlInputs.map((input) => ({
@@ -199,15 +198,7 @@ function updateSaveButtonState() {
     })));
     let hasInvalidUpdate = false;
     for (const [index, input] of urlInputs.entries()) {
-        const validationError = errors[index];
-        const error = validationError?.type === 'invalid'
-            ? chrome.i18n.getMessage('invalidAmazonTagUrl')
-            : validationError?.type === 'duplicate'
-                ? chrome.i18n.getMessage(
-                    'duplicateTagAddError',
-                    validationError.tag,
-                )
-                : '';
+        const error = getTagUrlValidationMessage(errors[index]);
         const errorElement = input
             .closest('label')
             .querySelector('.tag-url-error');
@@ -224,8 +215,30 @@ function updateSaveButtonState() {
         getPendingUpdates().length === 0 || hasInvalidUpdate;
 }
 
+/** Returns the localized message for a tag URL validation error. */
+function getTagUrlValidationMessage(error) {
+    if (error?.type === 'invalid') {
+        return chrome.i18n.getMessage('invalidAmazonTagUrl');
+    }
+    if (error?.type === 'duplicate') {
+        return chrome.i18n.getMessage('duplicateTagError', error.tag);
+    }
+    return '';
+}
+
+/** Validates the add URL against saved keys using the shared URL validator. */
+function getAddFormUrlValidationError(url) {
+    const entries = savedTags.map(({tag, url: originalUrl}) => ({
+        originalTag: tag,
+        originalUrl,
+        url: originalUrl,
+    }));
+    entries.push({url, originalUrl: '', originalTag: '', validate: true});
+    return getTagUrlValidationErrors(entries).at(-1);
+}
+
 /**
- * Loads the keys initially displayed on the options page from local storage.
+ * Loads saved tag records from local storage and renders the options page.
  * @returns {Promise<void>}
  */
 async function loadTags() {
@@ -239,31 +252,25 @@ async function loadTags() {
     }
 }
 
-/** Validates the add URL and blocks invalid or duplicate keys. */
+/** Displays add-form URL errors and blocks invalid or duplicate keys. */
 function updateAddFormState() {
     const url = newUrlInput.value.trim();
-    const tag = getTagFromAmazonUrl(newUrlInput.value);
-    const validUrl = isValidAmazonTagUrl(url, tag);
-    const duplicate = hasTagEntry(tag, savedTags);
-    addButton.disabled = !validUrl || duplicate;
-    addError.textContent = duplicate
-        ? chrome.i18n.getMessage('duplicateTagAddError', tag)
-        : url && !validUrl
-            ? chrome.i18n.getMessage('invalidAmazonTagUrl')
-            : '';
+    const validationError = getAddFormUrlValidationError(url);
+    addButton.disabled = Boolean(validationError);
+    addError.textContent = url ? getTagUrlValidationMessage(validationError) : '';
 }
 
-/** Validates and adds a tag and its original Amazon URL. */
+/** Validates the source URL and adds its derived key and optional description. */
 addForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const url = newUrlInput.value.trim();
     const tag = getTagFromAmazonUrl(url);
     updateAddFormState();
-    if (hasTagEntry(tag, savedTags)) {
+    if (getAddFormUrlValidationError(url)) {
         return;
     }
 
-    if (!isValidAmazonTagUrl(url, tag)) {
+    if (!tag) {
         statusElement.textContent = chrome.i18n.getMessage('invalidAmazonTagUrl');
         return;
     }
@@ -296,7 +303,7 @@ newUrlInput.addEventListener('input', () => {
     updateAddFormState();
 });
 
-/** Persists all pending edits in a single operation. */
+/** Sends all pending record edits as one service-worker operation. */
 saveTagsButton.addEventListener('click', async () => {
     updateSaveButtonState();
     const updates = getPendingUpdates();
@@ -313,7 +320,7 @@ saveTagsButton.addEventListener('click', async () => {
     }
 });
 
-/** Requests two confirmations before deleting all keys. */
+/** Requires two confirmations before deleting every saved record. */
 deleteAllButton.addEventListener('click', async () => {
     if (savedTags.length === 0) {
         return;
@@ -336,7 +343,7 @@ deleteAllButton.addEventListener('click', async () => {
     }
 });
 
-/** Generates and downloads a JSON file containing all keys and descriptions. */
+/** Exports saved records as a versioned JSON file. */
 exportButton.addEventListener('click', () => {
     if (savedTags.length === 0) {
         return;
@@ -355,14 +362,14 @@ exportButton.addEventListener('click', () => {
     downloadLink.download = chrome.i18n.getMessage('exportFileName');
     downloadLink.click();
     setTimeout(
-        /** Releases the temporary URL after the download starts. */
+        /** Revokes the temporary download URL after the download begins. */
         () => URL.revokeObjectURL(downloadUrl),
         1000,
     );
     statusElement.textContent = chrome.i18n.getMessage('exportedJson');
 });
 
-/** Validates and merges the keys selected in a JSON file. */
+/** Validates a JSON file and merges its records with the saved list. */
 importFileInput.addEventListener('change', async () => {
     const file = importFileInput.files?.[0];
     if (!file) {
@@ -384,7 +391,7 @@ importFileInput.addEventListener('change', async () => {
             !Array.isArray(entries) ||
             entries.length === 0 ||
             entries.some(
-                /** Rejects invalid records or fields with incorrect types. */
+                /** Rejects malformed records, field types, and supplied URLs. */
                 (entry) => {
                     if (typeof entry === 'string') {
                         return !entry.trim();
@@ -432,7 +439,7 @@ importFileInput.addEventListener('change', async () => {
     }
 });
 
-/** Updates the list when another part of the extension changes storage. */
+/** Synchronizes the page when another extension component updates storage. */
 chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'local' && changes.savedTags) {
         savedTags = normalizeTagEntries(changes.savedTags.newValue);
