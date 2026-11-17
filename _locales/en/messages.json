@@ -6,7 +6,7 @@
     "message": "An extension for managing affiliate tags."
   },
   "detectedTagLabel": {
-    "message": "Tag detected in the URL:"
+    "message": "Last key access:"
   },
   "checkingTag": {
     "message": "Checking tag..."
@@ -18,7 +18,7 @@
     "message": "Select a tag"
   },
   "automaticDetectionNote": {
-    "message": "Tags are detected automatically. Use this list only to switch the current tag."
+    "message": "Tags are detected automatically. Use this list to open a saved URL."
   },
   "applyTagButton": {
     "message": "Apply tag and reload tab"
@@ -271,5 +271,53 @@
   },
   "identifyActiveTabError": {
     "message": "Could not identify the active tab:"
+  },
+  "noAccessRecorded": {
+    "message": "No access recorded"
+  },
+  "openCurrentTabButton": {
+    "message": "Open in current tab"
+  },
+  "openNewTabButton": {
+    "message": "Open in new tab"
+  },
+  "savedUrlRequired": {
+    "message": "Add an original URL to a saved tag in settings before opening it."
+  },
+  "openSavedUrlError": {
+    "message": "Could not open the saved URL: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "originalUrlLabel": {
+    "message": "Original URL"
+  },
+  "editOriginalUrlAriaLabel": {
+    "message": "Edit original URL for $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastAccessedTagValue": {
+    "message": "$1: Last accessed: $2 at $3",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      },
+      "date": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      }
+    }
+  },
+  "invalidAmazonTagUrl": {
+    "message": "Enter a supported Amazon URL containing this tag."
   }
 }

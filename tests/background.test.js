@@ -37,10 +37,17 @@ function createBackgroundHarness(initialStorage = {}) {
         storage: {
             local: {
                 async get(key) {
+                    if (Array.isArray(key)) {
+                        return Object.fromEntries(
+                            key.map((name) => [name, storage[name]]),
+                        );
+                    }
                     return {[key]: storage[key]};
                 },
                 async remove(key) {
-                    delete storage[key];
+                    for (const name of Array.isArray(key) ? key : [key]) {
+                        delete storage[name];
+                    }
                 },
                 async set(values) {
                     Object.assign(storage, values);
@@ -56,6 +63,9 @@ function createBackgroundHarness(initialStorage = {}) {
             async query() {
                 return [];
             },
+        },
+        webNavigation: {
+            onCompleted: createEvent(),
         },
     };
 
@@ -73,7 +83,7 @@ function createBackgroundHarness(initialStorage = {}) {
         'utf8',
     );
     vm.runInContext(
-        `${source}\nglobalThis.testApi = {mergeTagEntries, mutateStoredTags, getAmazonTags, updateBadge};`,
+        `${source}\nglobalThis.testApi = {mergeTagEntries, mutateStoredTags, getAmazonTags, getAmazonTagEntries, updateBadge};`,
         context,
     );
 
@@ -107,21 +117,33 @@ test('adds, merges, edits, and deletes tags in storage', async () => {
     const added = await api.mutateStoredTags({
         type: 'add',
         tags: [
-            {tag: 'existing-20'},
-            {tag: 'new-20', description: 'New account'},
+            {
+                tag: 'existing-20',
+                url: 'https://www.amazon.com/?tag=existing-20',
+            },
+            {
+                tag: 'new-20',
+                description: 'New account',
+                url: 'https://www.amazon.com/?tag=new-20',
+            },
         ],
     });
     assert.deepEqual(
         JSON.parse(JSON.stringify(added)),
         [
-            {tag: 'existing-20', description: 'My account'},
-            {tag: 'new-20', description: 'New account'},
+            {tag: 'existing-20', description: 'My account', url: 'https://www.amazon.com/?tag=existing-20'},
+            {tag: 'new-20', description: 'New account', url: 'https://www.amazon.com/?tag=new-20'},
         ],
     );
 
     const updated = await api.mutateStoredTags({
         type: 'updateMany',
-        updates: [{oldTag: 'new-20', tag: 'renamed-20', description: 'Renamed'}],
+        updates: [{
+            oldTag: 'new-20',
+            tag: 'renamed-20',
+            description: 'Renamed',
+            url: 'https://www.amazon.com/?tag=renamed-20',
+        }],
     });
     assert.equal(updated[1].tag, 'renamed-20');
     assert.equal(updated[1].description, 'Renamed');
@@ -132,9 +154,122 @@ test('adds, merges, edits, and deletes tags in storage', async () => {
     });
     assert.deepEqual(
         JSON.parse(JSON.stringify(deleted)),
-        [{tag: 'renamed-20', description: 'Renamed'}],
+        [{
+            tag: 'renamed-20',
+            description: 'Renamed',
+            url: 'https://www.amazon.com/?tag=renamed-20',
+        }],
     );
     assert.deepEqual(storage.savedTags, deleted);
+    assert.equal(storage.lastAccessedTag, null);
+});
+
+test('captures full URLs, preserves an existing URL, and updates last access time', async () => {
+    const savedUrl = 'https://www.amazon.com/dp/original?tag=existing-20';
+    const {api, storage} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'existing-20',
+            description: 'Account',
+            url: savedUrl,
+            lastAccessed: '',
+        }],
+    });
+    const visitedUrl = 'https://www.amazon.com/dp/another?tag=existing-20&tag=new-20';
+
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(api.getAmazonTagEntries(visitedUrl))),
+        [
+            {tag: 'existing-20', url: visitedUrl},
+            {tag: 'new-20', url: visitedUrl},
+        ],
+    );
+    await api.mutateStoredTags({
+        type: 'discover',
+        tags: api.getAmazonTagEntries(visitedUrl),
+    });
+
+    assert.equal(storage.savedTags[0].url, savedUrl);
+    assert.equal(storage.savedTags[0].lastAccessed, undefined);
+    assert.equal(storage.savedTags[1].url, visitedUrl);
+    assert.equal(storage.savedTags[1].lastAccessed, undefined);
+    assert.equal(storage.lastAccessedTag.tag, 'new-20');
+    assert.ok(Date.parse(storage.lastAccessedTag.lastAccessed));
+});
+
+test('records access through popup requests and requires valid original URLs', async () => {
+    const originalUrl = 'https://www.amazon.com/dp/item?tag=account-20';
+    const {api, storage} = createBackgroundHarness({
+        savedTags: [{tag: 'account-20', url: originalUrl}],
+    });
+
+    await api.mutateStoredTags({type: 'access', tag: 'account-20'});
+    assert.equal(storage.lastAccessedTag.tag, 'account-20');
+    assert.ok(Date.parse(storage.lastAccessedTag.lastAccessed));
+
+    await assert.rejects(
+        api.mutateStoredTags({
+            type: 'updateMany',
+            updates: [{
+                oldTag: 'account-20',
+                tag: 'renamed-20',
+                url: originalUrl,
+            }],
+        }),
+        /invalidAmazonTagUrl/,
+    );
+    await assert.rejects(
+        api.mutateStoredTags({
+            type: 'add',
+            tags: [{tag: 'other-20', url: originalUrl}],
+        }),
+        /invalidAmazonTagUrl/,
+    );
+});
+
+test('stores one last-access record only after main-frame navigation completes', async () => {
+    const previousAccess = '2026-01-02T03:04:05.000Z';
+    const validUrl = 'https://www.amazon.com/dp/item?tag=account-20';
+    const {storage, chrome} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'account-20',
+            url: validUrl,
+        }],
+        lastAccessedTag: {tag: 'previous-20', lastAccessed: previousAccess},
+    });
+
+    await chrome.tabs.onActivated.listener({tabId: 1});
+    await chrome.tabs.onUpdated.listener(1, {url: validUrl}, {url: validUrl});
+    assert.deepEqual(storage.lastAccessedTag, {
+        tag: 'previous-20',
+        lastAccessed: previousAccess,
+    });
+
+    await chrome.tabs.onUpdated.listener(
+        1,
+        {status: 'complete'},
+        {url: validUrl, active: false},
+    );
+    assert.deepEqual(storage.lastAccessedTag, {
+        tag: 'previous-20',
+        lastAccessed: previousAccess,
+    });
+
+    await chrome.webNavigation.onCompleted.listener({
+        frameId: 1,
+        url: validUrl,
+    });
+    assert.deepEqual(storage.lastAccessedTag, {
+        tag: 'previous-20',
+        lastAccessed: previousAccess,
+    });
+
+    await chrome.webNavigation.onCompleted.listener({
+        frameId: 0,
+        url: validUrl,
+    });
+    assert.notEqual(storage.lastAccessedTag.lastAccessed, previousAccess);
+    assert.equal(storage.lastAccessedTag.tag, 'account-20');
+    assert.ok(Date.parse(storage.lastAccessedTag.lastAccessed));
 });
 
 test('rejects duplicate edits without changing stored tags', async () => {
@@ -148,8 +283,16 @@ test('rejects duplicate edits without changing stored tags', async () => {
         api.mutateStoredTags({
             type: 'updateMany',
             updates: [
-                {oldTag: 'first-20', tag: 'same-20'},
-                {oldTag: 'second-20', tag: 'same-20'},
+                {
+                    oldTag: 'first-20',
+                    tag: 'same-20',
+                    url: 'https://www.amazon.com/?tag=same-20',
+                },
+                {
+                    oldTag: 'second-20',
+                    tag: 'same-20',
+                    url: 'https://www.amazon.com/?tag=same-20',
+                },
             ],
         }),
         /duplicateKeysResult/,
@@ -160,12 +303,17 @@ test('rejects duplicate edits without changing stored tags', async () => {
 test('deletes all tags from storage', async () => {
     const {api, storage} = createBackgroundHarness({
         savedTags: [{tag: 'account-20', description: ''}],
+        lastAccessedTag: {
+            tag: 'account-20',
+            lastAccessed: '2026-01-02T03:04:05.000Z',
+        },
     });
 
     const result = await api.mutateStoredTags({type: 'deleteAll'});
 
     assert.deepEqual(JSON.parse(JSON.stringify(result)), []);
     assert.equal(Object.hasOwn(storage, 'savedTags'), false);
+    assert.equal(Object.hasOwn(storage, 'lastAccessedTag'), false);
 });
 
 test('sets badge text and color for tagged, untagged, and non-Amazon URLs', async () => {

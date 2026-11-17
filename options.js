@@ -1,13 +1,14 @@
 /**
  * Controls the options page: keeps the local key list synchronized and allows
- * adding, editing, deleting, and importing/exporting `{ tag, description }`
- * records. Mutations are sent to the service worker to serialize writes to
+ * adding, editing, deleting, and importing/exporting saved tag records.
+ * Mutations are sent to the service worker to serialize writes to
  * `chrome.storage.local`.
  */
 const tagList = document.getElementById('tag-list');
 const addForm = document.getElementById('add-form');
 const newTagInput = document.getElementById('new-tag');
 const newDescriptionInput = document.getElementById('new-description');
+const newUrlInput = document.getElementById('new-url');
 const importFileInput = document.getElementById('import-file');
 const statusElement = document.getElementById('status');
 const saveTagsButton = document.getElementById('save-tags-button');
@@ -86,7 +87,20 @@ function renderTags() {
             ),
         );
         descriptionLabel.append(descriptionInput);
-        fields.append(tagLabel, descriptionLabel);
+        const urlLabel = document.createElement('label');
+        urlLabel.textContent = chrome.i18n.getMessage('originalUrlLabel');
+        const urlInput = document.createElement('input');
+        urlInput.type = 'url';
+        urlInput.required = true;
+        urlInput.value = entry.url;
+        urlInput.dataset.originalUrl = entry.url;
+        urlInput.dataset.originalTag = entry.tag;
+        urlInput.setAttribute(
+            'aria-label',
+            chrome.i18n.getMessage('editOriginalUrlAriaLabel', entry.tag),
+        );
+        urlLabel.append(urlInput);
+        fields.append(tagLabel, descriptionLabel, urlLabel);
 
         const actions = document.createElement('div');
         actions.className = 'tag-actions';
@@ -126,15 +140,16 @@ function renderTags() {
 
 /**
  * Reads unsaved changes from the list fields.
- * @returns {{oldTag: string, tag: string, description: string}[]} Pending changes.
+ * @returns {{oldTag: string, tag: string, description: string, url: string}[]} Pending changes.
  */
 function getPendingUpdates() {
     return [...tagList.querySelectorAll('li')]
         .map(
             /** Converts an item's fields into an update. */
             (item) => {
-            const [tagInput, descriptionInput] = item.querySelectorAll('input');
-            if (!tagInput || !descriptionInput) {
+            const [tagInput, descriptionInput, urlInput] =
+                item.querySelectorAll('input');
+            if (!tagInput || !descriptionInput || !urlInput) {
                 return null;
             }
 
@@ -143,6 +158,8 @@ function getPendingUpdates() {
                 tag: tagInput.value.trim(),
                 description: descriptionInput.value.trim(),
                 originalDescription: descriptionInput.dataset.originalDescription,
+                url: urlInput.value.trim(),
+                originalUrl: urlInput.dataset.originalUrl,
             };
             },
         )
@@ -150,12 +167,13 @@ function getPendingUpdates() {
             /** Discards unchanged items and items without editable fields. */
             (entry) => entry && (
                 entry.tag !== entry.oldTag ||
-                entry.description !== entry.originalDescription
+                entry.description !== entry.originalDescription ||
+                entry.url !== entry.originalUrl
             ),
         )
         .map(
             /** Returns only the data needed to persist the update. */
-            ({oldTag, tag, description}) => ({oldTag, tag, description}),
+            ({oldTag, tag, description, url}) => ({oldTag, tag, description, url}),
         );
 }
 
@@ -179,22 +197,32 @@ async function loadTags() {
     }
 }
 
-/** Validates and adds a key entered by the user. */
+/** Validates and adds a tag and its original Amazon URL. */
 addForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const tag = newTagInput.value.trim();
+    const url = newUrlInput.value.trim();
     if (!tag) {
         statusElement.textContent = chrome.i18n.getMessage('validTagRequired');
+        return;
+    }
+    if (!isValidAmazonTagUrl(url, tag)) {
+        statusElement.textContent = chrome.i18n.getMessage('invalidAmazonTagUrl');
         return;
     }
 
     try {
         await mutateTags({
             type: 'add',
-            tags: [{tag, description: newDescriptionInput.value.trim()}],
+            tags: [{
+                tag,
+                description: newDescriptionInput.value.trim(),
+                url,
+            }],
         });
         newTagInput.value = '';
         newDescriptionInput.value = '';
+        newUrlInput.value = '';
         statusElement.textContent = chrome.i18n.getMessage('tagAdded');
     } catch (error) {
         statusElement.textContent =
@@ -247,7 +275,12 @@ exportButton.addEventListener('click', () => {
         return;
     }
 
-    const json = JSON.stringify({version: 2, tags: savedTags}, null, 2);
+    const exportTags = savedTags.map(({tag, description, url}) => ({
+        tag,
+        description,
+        url,
+    }));
+    const json = JSON.stringify({version: 3, tags: exportTags}, null, 2);
     const file = new Blob([json], {type: 'application/json'});
     const downloadUrl = URL.createObjectURL(file);
     const downloadLink = document.createElement('a');
@@ -296,7 +329,11 @@ importFileInput.addEventListener('change', async () => {
                         typeof entry.tag !== 'string' ||
                         !entry.tag.trim() ||
                         (entry.description !== undefined &&
-                            typeof entry.description !== 'string')
+                            typeof entry.description !== 'string') ||
+                        (entry.url !== undefined &&
+                            typeof entry.url !== 'string') ||
+                        (entry.url &&
+                            !isValidAmazonTagUrl(entry.url, entry.tag))
                     );
                 },
             )
@@ -306,7 +343,18 @@ importFileInput.addEventListener('change', async () => {
             );
         }
 
-        await mutateTags({type: 'merge', tags: entries});
+        await mutateTags({
+            type: 'merge',
+            tags: entries.map((entry) => (
+                typeof entry === 'string'
+                    ? entry
+                    : {
+                        tag: entry.tag,
+                        description: entry.description,
+                        url: entry.url,
+                    }
+            )),
+        });
         statusElement.textContent = chrome.i18n.getMessage('importedTags');
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

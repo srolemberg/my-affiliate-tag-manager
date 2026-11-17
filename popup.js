@@ -1,15 +1,17 @@
 /**
  * Controls the extension popup: validates the active tab's domain, displays
- * tags found in the URL, and allows replacing the `tag` parameter with a saved
- * key. The list is read from `chrome.storage.local`.
+ * last-access time, and opens a saved tag's captured URL in the current or a
+ * new tab.
  */
 const detectedTagElement = document.getElementById('detected-tag');
 const tagSelect = document.getElementById('saved-tag');
-const applyTagButton = document.getElementById('apply-tag-button');
+const openCurrentTabButton = document.getElementById('open-current-tab-button');
+const openNewTabButton = document.getElementById('open-new-tab-button');
 const statusElement = document.getElementById('status');
 const tagForm = document.getElementById('tag-form');
 const amazonContent = document.getElementById('amazon-content');
 const domainMessage = document.getElementById('domain-message');
+let savedTags = [];
 
 /**
  * Loads the active tab, displays the detected tag, and populates the tag
@@ -35,41 +37,59 @@ async function loadPopup() {
             return;
         }
 
-        const stored = await chrome.storage.local.get('savedTags');
-        const tagValues = currentUrl.searchParams.getAll('tag');
-        const hasTag = currentUrl.searchParams.has('tag');
-        detectedTagElement.textContent = hasTag
-            ? tagValues.filter(Boolean).join(', ') || chrome.i18n.getMessage('tagWithoutValue')
-            : chrome.i18n.getMessage('noTagIdentified');
-        detectedTagElement.style.color = hasTag ? 'green' : 'red';
-        tagForm.dataset.tabId = String(activeTab.id);
+        const stored = await chrome.storage.local.get([
+            'savedTags',
+            'lastAccessedTag',
+        ]);
+        savedTags = normalizeTagEntries(stored.savedTags);
+        let lastAccessedTag = stored.lastAccessedTag;
+        if (
+            !lastAccessedTag ||
+            typeof lastAccessedTag.tag !== 'string' ||
+            typeof lastAccessedTag.lastAccessed !== 'string' ||
+            Number.isNaN(Date.parse(lastAccessedTag.lastAccessed))
+        ) {
+            lastAccessedTag = getLatestAccessRecord(stored.savedTags);
+            if (lastAccessedTag) {
+                await chrome.storage.local.set({
+                    savedTags,
+                    lastAccessedTag,
+                });
+            }
+        }
 
-        const storedTags = Array.isArray(stored.savedTags) ? stored.savedTags : [];
-        const savedTags = storedTags
-            .map(
-                /** Converts legacy keys to records with an empty description. */
-                (entry) => (
-                typeof entry === 'string'
-                    ? {tag: entry, description: ''}
-                    : entry
-                ),
-            )
-            .filter(
-                /** Keeps only records with a valid key. */
-                (entry) => typeof entry?.tag === 'string' && entry.tag.trim(),
+        if (lastAccessedTag) {
+            const accessedDate = new Date(lastAccessedTag.lastAccessed);
+            const date = new Intl.DateTimeFormat(undefined, {
+                dateStyle: 'short',
+            }).format(accessedDate);
+            const time = new Intl.DateTimeFormat(undefined, {
+                timeStyle: 'medium',
+            }).format(accessedDate);
+            detectedTagElement.textContent = chrome.i18n.getMessage(
+                'lastAccessedTagValue',
+                [lastAccessedTag.tag, date, time],
             );
+        } else {
+            detectedTagElement.textContent = chrome.i18n.getMessage('noAccessRecorded');
+        }
+        tagForm.dataset.tabId = String(activeTab.id);
 
         for (const entry of savedTags) {
             const option = document.createElement('option');
             option.value = entry.tag;
             option.textContent = entry.description || entry.tag;
+            option.disabled = !isValidAmazonTagUrl(entry.url, entry.tag);
             tagSelect.append(option);
         }
         tagSelect.value = '';
-        applyTagButton.disabled = true;
+        openCurrentTabButton.disabled = true;
+        openNewTabButton.disabled = true;
 
-        if (tagSelect.options.length === 1) {
+        if (savedTags.length === 0) {
             statusElement.textContent = chrome.i18n.getMessage('addTagInSettings');
+        } else if (!savedTags.some((entry) => isValidAmazonTagUrl(entry.url, entry.tag))) {
+            statusElement.textContent = chrome.i18n.getMessage('savedUrlRequired');
         }
     } catch (error) {
         amazonContent.hidden = true;
@@ -79,35 +99,55 @@ async function loadPopup() {
     }
 }
 
-/** Updates the button state when the selection changes. */
+/** Updates both open buttons when a saved tag is selected. */
 tagSelect.addEventListener('change', () => {
-    applyTagButton.disabled = !tagSelect.value;
+    const selected = savedTags.find((entry) => entry.tag === tagSelect.value);
+    const canOpen = Boolean(selected && isValidAmazonTagUrl(selected.url, selected.tag));
+    openCurrentTabButton.disabled = !canOpen;
+    openNewTabButton.disabled = !canOpen;
 });
 
-/** Applies the selected tag to the active tab and closes the popup. */
-tagForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
+/** Opens the selected record's captured URL and records the access time. */
+async function openSelectedTag(openInNewTab) {
     const tabId = Number(tagForm.dataset.tabId);
     const selectedTag = tagSelect.value;
+    const selected = savedTags.find((entry) => entry.tag === selectedTag);
 
-    if (!Number.isInteger(tabId) || !selectedTag) {
+    if (!selected || !isValidAmazonTagUrl(selected.url, selected.tag) ||
+        (!openInNewTab && !Number.isInteger(tabId))) {
         statusElement.textContent = chrome.i18n.getMessage('selectValidTag');
         return;
     }
 
     try {
-        const tab = await chrome.tabs.get(tabId);
-        if (!tab.url) {
-            throw new Error(chrome.i18n.getMessage('tabUrlUnavailable'));
+        if (openInNewTab) {
+            await chrome.tabs.create({url: selected.url});
+        } else {
+            await chrome.tabs.update(tabId, {url: selected.url});
         }
 
-        const updatedUrl = new URL(tab.url);
-        updatedUrl.searchParams.set('tag', selectedTag);
-        await chrome.tabs.update(tabId, {url: updatedUrl.toString()});
+        const response = await chrome.runtime.sendMessage({
+            type: 'tags:mutate',
+            operation: {type: 'access', tag: selected.tag},
+        });
+        if (response?.error) {
+            throw new Error(response.error);
+        }
+        if (!response || !Array.isArray(response.tags)) {
+            throw new Error(chrome.i18n.getMessage('serviceWorkerInvalidResponse'));
+        }
         window.close();
     } catch (error) {
-        statusElement.textContent = chrome.i18n.getMessage('applyTagError', error.message);
+        statusElement.textContent =
+            chrome.i18n.getMessage('openSavedUrlError', error.message);
     }
+}
+
+openCurrentTabButton.addEventListener('click', () => {
+    void openSelectedTag(false);
+});
+openNewTabButton.addEventListener('click', () => {
+    void openSelectedTag(true);
 });
 
 void loadPopup();

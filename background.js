@@ -1,22 +1,23 @@
 /**
  * Extension service worker: monitors navigation on Amazon domains, records
- * `tag` parameter values, and updates the badge. Persists keys and descriptions
- * in `chrome.storage.local` and handles CRUD operations from the options page.
- * Each saved record has the `{ tag, description }` format.
+ * `tag` parameter values, and updates the badge. Persists tags, original URLs,
+ * descriptions, and the single most-recent access record in `chrome.storage.local`.
  */
 importScripts('tag-utils.js');
 
 const TAG_STORAGE_KEY = 'savedTags';
+const LAST_ACCESSED_STORAGE_KEY = 'lastAccessedTag';
 let latestUpdate = 0;
 let tagMutationQueue = Promise.resolve();
 
 /**
- * Merges records, preserving existing descriptions when incoming ones are empty.
- * @param {Array<string|{tag: string, description?: string}>} existingEntries Current records.
- * @param {Array<string|{tag: string, description?: string}>} incomingEntries Incoming records.
- * @returns {{tag: string, description: string}[]} Merged records.
+ * Merges records, preserving existing metadata when incoming values are empty.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>} existingEntries Current records.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>} incomingEntries Incoming records.
+ * @param {boolean} preserveExistingUrls Whether existing URLs take precedence.
+ * @returns {{tag: string, description: string, url: string}[]} Merged records.
  */
-function mergeTagEntries(existingEntries, incomingEntries) {
+function mergeTagEntries(existingEntries, incomingEntries, preserveExistingUrls = false) {
     const mergedEntries = new Map(
         normalizeTagEntries(existingEntries).map(
             /** Indexes existing records by key. */
@@ -29,6 +30,9 @@ function mergeTagEntries(existingEntries, incomingEntries) {
         mergedEntries.set(entry.tag, {
             tag: entry.tag,
             description: entry.description || existing?.description || '',
+            url: preserveExistingUrls
+                ? existing?.url || entry.url
+                : entry.url || existing?.url || '',
         });
     }
 
@@ -44,14 +48,69 @@ function mutateStoredTags(operation) {
     const pendingMutation = tagMutationQueue.then(
         /** Applies the mutation after previous operations have completed. */
         async () => {
-            const stored = await chrome.storage.local.get(TAG_STORAGE_KEY);
+            const stored = await chrome.storage.local.get([
+                TAG_STORAGE_KEY,
+                LAST_ACCESSED_STORAGE_KEY,
+            ]);
             const tags = normalizeTagEntries(stored[TAG_STORAGE_KEY]);
+            let lastAccessedTag = stored[LAST_ACCESSED_STORAGE_KEY];
+            if (
+                !lastAccessedTag ||
+                typeof lastAccessedTag.tag !== 'string' ||
+                typeof lastAccessedTag.lastAccessed !== 'string' ||
+                Number.isNaN(Date.parse(lastAccessedTag.lastAccessed))
+            ) {
+                lastAccessedTag = getLatestAccessRecord(stored[TAG_STORAGE_KEY]);
+            }
             let updatedTags;
 
             switch (operation?.type) {
                 case 'add':
+                    if (
+                        !Array.isArray(operation.tags) ||
+                        operation.tags.some(
+                            (entry) => !isValidAmazonTagUrl(entry?.url, entry?.tag),
+                        )
+                    ) {
+                        throw new Error(chrome.i18n.getMessage('invalidAmazonTagUrl'));
+                    }
                     updatedTags = mergeTagEntries(tags, operation.tags);
                     break;
+                case 'discover': {
+                    if (!Array.isArray(operation.tags)) {
+                        throw new Error(chrome.i18n.getMessage('invalidUpdatesList'));
+                    }
+                    updatedTags = mergeTagEntries(
+                        tags,
+                        operation.tags,
+                        true,
+                    );
+                    const latestEntry = operation.tags.at(-1);
+                    if (latestEntry && isValidAmazonTagUrl(latestEntry.url, latestEntry.tag)) {
+                        lastAccessedTag = {
+                            tag: latestEntry.tag,
+                            lastAccessed: new Date().toISOString(),
+                        };
+                    }
+                    break;
+                }
+                case 'access': {
+                    const tag =
+                        typeof operation.tag === 'string' ? operation.tag.trim() : '';
+                    const existing = tags.find((entry) => entry.tag === tag);
+                    if (!existing) {
+                        throw new Error(chrome.i18n.getMessage('editedKeyNotFound'));
+                    }
+                    if (!isValidAmazonTagUrl(existing.url, existing.tag)) {
+                        throw new Error(chrome.i18n.getMessage('invalidAmazonTagUrl'));
+                    }
+                    updatedTags = tags;
+                    lastAccessedTag = {
+                        tag,
+                        lastAccessed: new Date().toISOString(),
+                    };
+                    break;
+                }
                 case 'updateMany': {
                     const updates = operation.updates;
                     if (!Array.isArray(updates)) {
@@ -74,6 +133,9 @@ function mutateStoredTags(operation) {
                         ) {
                             throw new Error(chrome.i18n.getMessage('invalidKeysOrDescriptions'));
                         }
+                        if (!isValidAmazonTagUrl(update.url, newTag)) {
+                            throw new Error(chrome.i18n.getMessage('invalidAmazonTagUrl'));
+                        }
 
                         if (updatesByTag.has(update.oldTag)) {
                             throw new Error(chrome.i18n.getMessage('duplicateEditedKey'));
@@ -81,6 +143,7 @@ function mutateStoredTags(operation) {
                         updatesByTag.set(update.oldTag, {
                             tag: newTag,
                             description: update.description?.trim() || '',
+                            url: update.url.trim(),
                         });
                     }
 
@@ -97,7 +160,9 @@ function mutateStoredTags(operation) {
                         /** Applies changes while leaving other records untouched. */
                         (entry) => {
                             const update = updatesByTag.get(entry.tag);
-                            return update ? {tag: update.tag, description: update.description} : entry;
+                            return update
+                                ? {...entry, ...update}
+                                : entry;
                         },
                     );
                     const uniqueTags = new Set(
@@ -109,6 +174,12 @@ function mutateStoredTags(operation) {
                     if (uniqueTags.size !== updatedTags.length) {
                         throw new Error(chrome.i18n.getMessage('duplicateKeysResult'));
                     }
+                    if (lastAccessedTag) {
+                        const renamedTag = updatesByTag.get(lastAccessedTag.tag)?.tag;
+                        if (renamedTag) {
+                            lastAccessedTag = {...lastAccessedTag, tag: renamedTag};
+                        }
+                    }
                     break;
                 }
                 case 'delete':
@@ -116,9 +187,15 @@ function mutateStoredTags(operation) {
                         /** Keeps every record except the requested key. */
                         (entry) => entry.tag !== operation.tag,
                     );
+                    if (lastAccessedTag?.tag === operation.tag) {
+                        lastAccessedTag = null;
+                    }
                     break;
                 case 'deleteAll':
-                    await chrome.storage.local.remove(TAG_STORAGE_KEY);
+                    await chrome.storage.local.remove([
+                        TAG_STORAGE_KEY,
+                        LAST_ACCESSED_STORAGE_KEY,
+                    ]);
                     updatedTags = normalizeTagEntries(
                         (await chrome.storage.local.get(TAG_STORAGE_KEY))[TAG_STORAGE_KEY],
                     );
@@ -127,13 +204,29 @@ function mutateStoredTags(operation) {
                     }
                     return updatedTags;
                 case 'merge':
+                    if (
+                        !Array.isArray(operation.tags) ||
+                        operation.tags.some(
+                            (entry) => (
+                                entry &&
+                                typeof entry === 'object' &&
+                                entry.url &&
+                                !isValidAmazonTagUrl(entry.url, entry.tag)
+                            ),
+                        )
+                    ) {
+                        throw new Error(chrome.i18n.getMessage('invalidAmazonTagUrl'));
+                    }
                     updatedTags = mergeTagEntries(tags, operation.tags);
                     break;
                 default:
                     throw new Error(chrome.i18n.getMessage('invalidTagOperation'));
             }
 
-            await chrome.storage.local.set({[TAG_STORAGE_KEY]: updatedTags});
+            await chrome.storage.local.set({
+                [TAG_STORAGE_KEY]: updatedTags,
+                [LAST_ACCESSED_STORAGE_KEY]: lastAccessedTag,
+            });
             return updatedTags;
         },
     );
@@ -148,11 +241,11 @@ function mutateStoredTags(operation) {
 }
 
 /**
- * Extracts `tag` values from URLs whose hostname contains `amazon.com`.
+ * Extracts unique tag records and the full source URL from supported domains.
  * @param {string|undefined} url Tab URL.
- * @returns {string[]} Detected tag values.
+ * @returns {{tag: string, url: string}[]} Detected tag records.
  */
-function getAmazonTags(url) {
+function getAmazonTagEntries(url) {
     if (!url) {
         return [];
     }
@@ -164,12 +257,20 @@ function getAmazonTags(url) {
         }
 
         return normalizeTagEntries(parsedUrl.searchParams.getAll('tag')).map(
-            /** Returns each key value found in the URL. */
-            (entry) => entry.tag,
+            (entry) => ({tag: entry.tag, url}),
         );
     } catch {
         return [];
     }
+}
+
+/**
+ * Extracts tag values from a supported Amazon URL.
+ * @param {string|undefined} url Tab URL.
+ * @returns {string[]} Detected tag values.
+ */
+function getAmazonTags(url) {
+    return getAmazonTagEntries(url).map((entry) => entry.tag);
 }
 
 /**
@@ -215,10 +316,10 @@ async function safelyUpdateBadge(url) {
  * @returns {Promise<void>}
  */
 async function saveDiscoveredTags(url) {
-    const discoveredTags = getAmazonTags(url);
+    const discoveredTags = getAmazonTagEntries(url);
     if (discoveredTags.length > 0) {
         try {
-            await mutateStoredTags({type: 'add', tags: discoveredTags});
+            await mutateStoredTags({type: 'discover', tags: discoveredTags});
         } catch (error) {
             console.error(chrome.i18n.getMessage('saveDiscoveredTagsError'), error);
         }
@@ -226,7 +327,7 @@ async function saveDiscoveredTags(url) {
 }
 
 /**
- * Updates discovered tags and the badge for a specific tab.
+ * Updates the badge for a specific tab without recording a tag access.
  * @param {number} tabId Tab identifier.
  * @returns {Promise<void>}
  */
@@ -239,10 +340,6 @@ async function updateBadgeForTab(tabId) {
             return;
         }
 
-        await saveDiscoveredTags(tab.url);
-        if (requestId !== latestUpdate) {
-            return;
-        }
         await safelyUpdateBadge(tab.url);
     } catch (error) {
         if (requestId !== latestUpdate) {
@@ -271,10 +368,6 @@ async function updateBadgeForActiveTab() {
         }
 
         const url = tabs[0]?.url;
-        await saveDiscoveredTags(url);
-        if (requestId !== latestUpdate) {
-            return;
-        }
         await safelyUpdateBadge(url);
     } catch (error) {
         if (requestId !== latestUpdate) {
@@ -288,16 +381,20 @@ async function updateBadgeForActiveTab() {
 
 /** Processes the tab that was just activated. */
 chrome.tabs.onActivated.addListener(({tabId}) => {
-    void updateBadgeForTab(tabId);
+    return updateBadgeForTab(tabId);
 });
 
-/** Saves tags from a new URL and updates the active tab's badge. */
+/** Records tags only after the main-frame navigation successfully completes. */
+chrome.webNavigation.onCompleted.addListener(({frameId, url}) => {
+    if (frameId === 0) {
+        return saveDiscoveredTags(url);
+    }
+});
+
+/** Updates the badge when the active tab's URL changes, without recording access. */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.url) {
-        void saveDiscoveredTags(changeInfo.url);
-        if (tab.active) {
-            void updateBadgeForActiveTab();
-        }
+    if (changeInfo.url && tab.active) {
+        void updateBadgeForActiveTab();
     }
 });
 

@@ -5,12 +5,12 @@ This root-level file is the single source of repository instructions for all cod
 ## Project context
 
 - Chrome extension using Manifest V3, implemented with native JavaScript and HTML, without a framework.
-- Detects the `tag` parameter in URLs whose hostname contains `amazon.com`, stores tags and descriptions in `chrome.storage.local`, and lets users manage or switch tags through the popup.
+- Detects the `tag` parameter in URLs whose hostname contains `amazon.com`, stores tag keys, original URLs, and descriptions in `chrome.storage.local`, and keeps a single global most-recent access record for the popup.
 - `manifest.json` registers `background.js` as the service worker and the popup/options pages as extension interfaces.
 - `background.js` monitors tab activation and URL changes, records discovered tags, updates the action badge, and handles tag mutations.
-- `popup.html`/`popup.js` show the active tab's tag and switch it to a saved tag.
-- `options.html`/`options.js` implement tag management, batch edits, deletion, and JSON import/export.
-- `tag-utils.js` provides shared normalization and Amazon URL validation. It is loaded using `importScripts()` in the service worker and script tags in both HTML pages.
+- `popup.html`/`popup.js` show last-access time and open a saved URL in the current or a new tab.
+- `options.html`/`options.js` implement tag/URL management, batch edits, deletion, and JSON import/export.
+- `tag-utils.js` provides shared normalization and Amazon URL/tag validation. It is loaded using `importScripts()` in the service worker and script tags in both HTML pages.
 - `i18n.js` applies localized text and aria labels to marked HTML elements.
 - Messages are stored in `_locales/pt_BR/messages.json` and `_locales/en/messages.json`. The default language is set by `default_locale` in `manifest.json`.
 - Tests use Node.js's built-in test runner and are located in `tests/`.
@@ -27,17 +27,18 @@ This root-level file is the single source of repository instructions for all cod
 
 ## Data and message flow
 
-- The canonical storage key is `savedTags` in `chrome.storage.local`. Current records use `{ tag: string, description: string }`; legacy string entries remain supported and are normalized by `normalizeTagEntries()` in `tag-utils.js`.
+- The canonical list key is `savedTags` in `chrome.storage.local`. Records use `{ tag: string, description: string, url: string }`; the single global `{ tag, lastAccessed }` access record is stored separately as `lastAccessedTag`. Legacy per-record timestamps are consolidated during migration.
 - The options page sends `{ type: 'tags:mutate', operation }` messages to the service worker and expects either `{ tags }` or `{ error }`.
 - `background.js` serializes mutations through `tagMutationQueue`; route tag-list writes through this queue rather than writing directly from the options page.
-- Merge operations retain an existing description when an incoming entry has none. Tag keys and descriptions are trimmed, and tag keys remain unique.
-- JSON export uses `{ "version": 2, "tags": [...] }`. Imports also accept an array of strings or records, merge with stored tags, and remove duplicates.
+- Merge operations retain existing descriptions when incoming entries have none. `webNavigation.onCompleted` for the main frame on a supported URL preserves an existing URL, captures the full URL for a new tag, and replaces the global `lastAccessedTag` record with the last tag in that URL and an ISO 8601 timestamp. Popup launches replace that record as well; tab focus and `tabs.onUpdated` do not.
+- Tag keys and descriptions are trimmed, and tag keys remain unique. Added and edited records require an Amazon URL whose `tag` parameter contains that record's key.
+- JSON export uses `{ "version": 3, "tags": [...] }` with `tag`, `description`, and `url`; the global access record is not exported. Imports also accept older arrays and records without URLs, ignore any imported `lastAccessed`, merge with stored tags, and remove duplicates.
 
 ## Maintenance guidelines
 
 1. Read the files related to the request and follow existing patterns. Do not change files or behavior outside the scope.
 2. Make surgical changes and preserve compatibility with stored data and JSON import/export formats.
-3. Keep extension permissions to the minimum necessary. If a change requires a new permission, justify it and update the documentation.
+3. Keep extension permissions to the minimum necessary. `webNavigation` distinguishes completed main-frame navigations from tab activation for last-access timestamps; document permission changes in README.
 4. Put new user-facing text in both locale catalogs. Keep message identifiers and placeholders consistent; use `data-i18n`/`data-i18n-aria-label` in HTML and `chrome.i18n.getMessage()` in JavaScript. HTML scripts load `i18n.js` and `tag-utils.js` before the page-specific script.
 5. When changing logic, add or update tests in `tests/`. Cover valid results, invalid input, and relevant failures.
 6. Update `README.md` when changing installation, behavior, permissions, tests, import/export, or localization.

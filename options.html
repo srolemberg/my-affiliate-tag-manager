@@ -15,6 +15,7 @@
         form {
             align-items: end;
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
             margin: 16px 0;
         }
@@ -45,6 +46,7 @@
         .tag-fields {
             align-items: end;
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
         }
 
@@ -74,6 +76,9 @@
     </label>
     <label for="new-description"><span data-i18n="optionalDescription">Descrição (opcional)</span>
         <input id="new-description" name="description">
+    </label>
+    <label for="new-url"><span data-i18n="originalUrlLabel">URL original</span>
+        <input id="new-url" name="url" type="url" required>
     </label>
     <button type="submit" data-i18n="addButton">Adicionar</button>
 </form>

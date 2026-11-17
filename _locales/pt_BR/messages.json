@@ -6,7 +6,7 @@
     "message": "Uma extensão para gerenciar tags de afiliados."
   },
   "detectedTagLabel": {
-    "message": "Tag identificada na URL:"
+    "message": "Último acesso à chave:"
   },
   "checkingTag": {
     "message": "Verificando tag..."
@@ -18,7 +18,7 @@
     "message": "Selecione uma tag"
   },
   "automaticDetectionNote": {
-    "message": "As tags são detectadas automaticamente. Use esta lista apenas para trocar a tag atual."
+    "message": "As tags são detectadas automaticamente. Use esta lista para abrir uma URL salva."
   },
   "applyTagButton": {
     "message": "Aplicar tag e atualizar a aba"
@@ -271,5 +271,53 @@
   },
   "identifyActiveTabError": {
     "message": "Não foi possível identificar a aba ativa:"
+  },
+  "noAccessRecorded": {
+    "message": "Nenhum acesso registrado"
+  },
+  "openCurrentTabButton": {
+    "message": "Abrir na aba atual"
+  },
+  "openNewTabButton": {
+    "message": "Abrir em nova aba"
+  },
+  "savedUrlRequired": {
+    "message": "Adicione uma URL original à tag nas configurações antes de abri-la."
+  },
+  "openSavedUrlError": {
+    "message": "Não foi possível abrir a URL salva: $1",
+    "placeholders": {
+      "error": {
+        "content": "$1"
+      }
+    }
+  },
+  "originalUrlLabel": {
+    "message": "URL original"
+  },
+  "editOriginalUrlAriaLabel": {
+    "message": "Editar URL original de $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "lastAccessedTagValue": {
+    "message": "$1 : Último acesso: $2 às $3",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      },
+      "date": {
+        "content": "$2"
+      },
+      "time": {
+        "content": "$3"
+      }
+    }
+  },
+  "invalidAmazonTagUrl": {
+    "message": "Informe uma URL da Amazon válida que contenha esta tag."
   }
 }

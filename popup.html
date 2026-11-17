@@ -30,6 +30,16 @@
             width: 100%;
         }
 
+        .open-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .open-buttons button {
+            flex: 1;
+            min-width: 0;
+        }
+
         #status {
             min-height: 1.2em;
         }
@@ -39,7 +49,6 @@
 <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
 <p id="domain-message" role="status" hidden></p>
 <main id="amazon-content">
-    <p data-i18n="detectedTagLabel">Tag identificada na URL:</p>
     <p id="detected-tag" aria-live="polite" data-i18n="checkingTag">Verificando tag...</p>
 
     <form id="tag-form">
@@ -47,8 +56,11 @@
         <select id="saved-tag" required>
             <option value="" selected data-i18n="selectTag">Selecione uma tag</option>
         </select>
-        <small data-i18n="automaticDetectionNote">As tags são detectadas automaticamente. Use esta lista apenas para trocar a tag atual.</small>
-        <button id="apply-tag-button" type="submit" disabled data-i18n="applyTagButton">Aplicar tag e atualizar a aba</button>
+        <small data-i18n="automaticDetectionNote">As tags são detectadas automaticamente. Use esta lista para abrir uma URL salva.</small>
+        <div class="open-buttons">
+            <button id="open-current-tab-button" type="button" disabled data-i18n="openCurrentTabButton">Abrir na aba atual</button>
+            <button id="open-new-tab-button" type="button" disabled data-i18n="openNewTabButton">Abrir em nova aba</button>
+        </div>
         <small data-i18n="amazonCookieNote">A tag de afiliado da Amazon não precisa permanecer visível na barra de endereços durante a navegação. A Amazon grava um cookie no navegador que rastreia as compras durante as próximas 24 horas, mesmo que o parâmetro desapareça da URL.</small>
         <small class="session-warning"><p data-i18n="sessionWarning">A sessão é gerenciada pela Amazon; por isso, a extensão não pode garantir que a alteração tenha efeito imediato.</p></small>
     </form>
