@@ -20,6 +20,7 @@ function mutateStoredTags(operation) {
     const pendingMutation = tagMutationQueue.then(
         /** Waits for earlier writes before applying this operation. */
         async () => {
+            await amazonStoreDomainsReady;
             const stored = await chrome.storage.local.get([
                 TAG_STORAGE_KEY,
                 LAST_ACCESSED_STORAGE_KEY,
@@ -258,6 +259,7 @@ function getAmazonTagEntries(url) {
  * @returns {Promise<void>}
  */
 async function updateBadge(url) {
+    await amazonStoreDomainsReady;
     const stored = await chrome.storage.local.get([
         TAG_STORAGE_KEY,
         LAST_ACCESSED_STORAGE_KEY,
@@ -344,6 +346,7 @@ async function restoreAccessExpiryAlarm() {
  * @returns {Promise<void>}
  */
 async function saveDiscoveredTags(url) {
+    await amazonStoreDomainsReady;
     const discoveredTags = getAmazonTagEntries(url);
     if (discoveredTags.length > 0) {
         try {

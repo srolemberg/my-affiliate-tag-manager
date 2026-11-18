@@ -20,13 +20,8 @@
             min-width: 0;
         }
 
-        #amazon-content,
-        #tag-form {
+        #amazon-content {
             display: contents;
-        }
-
-        #amazon-content[hidden] {
-            display: none;
         }
 
         .open-buttons {
@@ -129,7 +124,7 @@
 <section id="amazon-content">
     <p id="detected-tag" aria-live="polite" data-i18n="checkingTag">Verificando tag...</p>
     <label for="saved-tag" data-i18n="affiliateTag">Tag de afiliado</label>
-    <select id="saved-tag" required>
+    <select id="saved-tag">
         <option value="" selected data-i18n="selectTag">Selecione uma tag</option>
     </select>
     <div class="open-buttons">
@@ -139,7 +134,7 @@
     <p id="status" role="status" aria-live="polite"></p>
 </section>
 <hr>
-<a id="manage-tags-link" href="options.html" target="_blank" data-i18n="manageTagsLink" data-i18n-aria-label="manageTagsLink" data-i18n-title="manageTagsLink" title="Abrir configurações e gerenciar tags">Abrir configurações e gerenciar tags</a>
+<a id="manage-tags-link" href="options.html" target="_blank" data-i18n="manageTagsLink">Abrir configurações e gerenciar tags</a>
 <details class="how-it-works">
     <summary data-i18n="howItWorksHeading">Como funciona</summary>
     <p data-i18n="howItWorksCapture">Ao visitar uma página cuja URL contém uma chave de afiliado, a extensão identifica e armazena essa URL em uma lista interna. Assim, você pode acessá-la rapidamente sem precisar procurá-la novamente.</p>
@@ -159,7 +154,7 @@
     <summary data-i18n="privacyHeading">Privacidade e dados</summary>
     <p data-i18n="howItWorksPrivacy">A extensão não coleta nem envia dados. As chaves e URLs são gerenciadas localmente no navegador, sem conexão com serviços externos; abrir uma URL salva exige conexão com o site. Você pode consultar o código-fonte pelo link no nome do autor, no rodapé da extensão.</p>
 </details>
-<iframe id="extension-footer" src="footer.html" data-i18n-aria-label="extensionFooterFrameTitle" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
+<iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
 <script src="i18n.js"></script>
 <script src="tag-utils.js"></script>
 <script src="popup.js"></script>

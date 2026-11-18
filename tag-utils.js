@@ -1,5 +1,49 @@
 /** Shared duration for inferred access status and its badge refresh alarm. */
 const TAG_ACCESS_VALIDITY_MS = 24 * 60 * 60 * 1000;
+const AMAZON_STORE_DOMAINS_FILE = 'amazon_store_domains.json';
+let amazonStoreDomains = new Set();
+
+/**
+ * Loads official store domains from the bundled JSON file. Only `stores` are
+ * used; redirects, short links, and unrelated Amazon services are excluded.
+ * @returns {Promise<void>}
+ */
+async function loadAmazonStoreDomains() {
+    const url = chrome.runtime.getURL(AMAZON_STORE_DOMAINS_FILE);
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Could not load ${AMAZON_STORE_DOMAINS_FILE}: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (!Array.isArray(data?.stores) || data.stores.length === 0) {
+        throw new Error(`${AMAZON_STORE_DOMAINS_FILE} has no store domain list.`);
+    }
+
+    const domains = new Set();
+    for (const store of data.stores) {
+        const domain = typeof store?.store_domain === 'string'
+            ? store.store_domain.trim().toLowerCase()
+            : '';
+        if (
+            !domain ||
+            domain.startsWith('.') ||
+            domain.endsWith('.') ||
+            domain.includes('..') ||
+            domain.includes('/') ||
+            domain.includes(':') ||
+            domain.includes('*')
+        ) {
+            throw new Error(`${AMAZON_STORE_DOMAINS_FILE} contains an invalid store domain.`);
+        }
+
+        domains.add(domain);
+    }
+
+    amazonStoreDomains = domains;
+}
+
+const amazonStoreDomainsReady = loadAmazonStoreDomains();
 
 /**
  * Normalizes legacy strings and record objects into unique tag records.
@@ -254,27 +298,25 @@ function getBadgeStatus(url, entries, accessRecord, now = Date.now()) {
 }
 
 /**
- * Checks whether a URL uses `amazon.com`, one of its subdomains, or a regional domain.
- * @param {string|undefined|null} url URL to inspect.
- * @returns {boolean} Whether the URL uses a supported Amazon hostname.
- */
-function isAmazonDomainUrl(url) {
-    if (typeof url !== 'string' || !url) {
-        return false;
-    }
-
-    try {
-        return isAmazonHostname(new URL(url).hostname);
-    } catch {
-        return false;
-    }
-}
-
-/**
- * Matches Amazon domain names at label boundaries, including regional domains.
+ * Matches Amazon.com and its subdomains, plus explicitly supported regional
+ * Amazon.com domains. Arbitrary suffixes are rejected to prevent lookalikes
+ * such as `amazon.com.attacker.example` from being treated as Amazon.
  * @param {string} hostname Hostname to check.
  * @returns {boolean} Whether the hostname is supported.
  */
 function isAmazonHostname(hostname) {
-    return /(^|\.)amazon\.com(\.|$)/.test(hostname);
+    if (typeof hostname !== 'string') {
+        return false;
+    }
+
+    const normalizedHostname = hostname.toLowerCase().replace(/\.$/, '');
+    for (const domain of amazonStoreDomains) {
+        if (
+            normalizedHostname === domain ||
+            normalizedHostname.endsWith(`.${domain}`)
+        ) {
+            return true;
+        }
+    }
+    return false;
 }

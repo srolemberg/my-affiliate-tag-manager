@@ -42,6 +42,7 @@ async function loadPopup() {
     }
 
     try {
+        await amazonStoreDomainsReady;
         const tabs = await chrome.tabs.query({active: true, currentWindow: true});
         const activeTab = tabs?.[0];
         const stored = await chrome.storage.local.get([

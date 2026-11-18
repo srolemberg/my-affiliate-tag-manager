@@ -1,6 +1,6 @@
 # My Affiliate Tags
 
-A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on `amazon.com` and its domain variants (such as `www.amazon.com` and `amazon.com.br`). Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
+A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on Amazon store domains listed in `amazon_store_domains.json` and their subdomains. Redirect, short-link, and non-store service domains in that file are not treated as stores. Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
 
 ## Installation
 
@@ -80,5 +80,6 @@ This project was developed with the assistance of artificial intelligence tools.
 - `popup.html` / `popup.js`: interface for viewing last access and opening saved URLs.
 - `options.html` / `options.js`: interface for tag and URL maintenance plus JSON import/export.
 - `tag-utils.js`: shared tag normalization/merging, Amazon URL parsing, and URL/tag validation.
+- `amazon_store_domains.json`: source of supported Amazon store domains used by URL validation.
 - `i18n.js`: localizes marked page content and provides shared error formatting for UI scripts.
 - `_locales/`: localized strings for the supported languages.

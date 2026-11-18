@@ -22,6 +22,7 @@ function createEvent() {
 function createBackgroundHarness(initialStorage = {}) {
     const storage = {...initialStorage};
     const badgeCalls = [];
+    const storeDomains = require('../amazon_store_domains.json');
     const chrome = {
         action: {
             async setBadgeText(details) {
@@ -46,6 +47,9 @@ function createBackgroundHarness(initialStorage = {}) {
             onInstalled: createEvent(),
             onStartup: createEvent(),
             onMessage: createEvent(),
+            getURL(fileName) {
+                return fileName;
+            },
         },
         storage: {
             onChanged: createEvent(),
@@ -98,6 +102,11 @@ function createBackgroundHarness(initialStorage = {}) {
         chrome,
         console: {error() {}},
         URL,
+        fetch: async () => ({
+            ok: true,
+            status: 200,
+            json: async () => storeDomains,
+        }),
         importScripts(fileName) {
             const utilityPath = path.join(__dirname, '..', fileName);
             vm.runInContext(fs.readFileSync(utilityPath, 'utf8'), context);
@@ -108,15 +117,16 @@ function createBackgroundHarness(initialStorage = {}) {
         'utf8',
     );
     vm.runInContext(
-        `${source}\nglobalThis.testApi = {mutateStoredTags, getAmazonTagEntries, updateBadge};`,
+        `${source}\nglobalThis.testApi = {mutateStoredTags, getAmazonTagEntries, updateBadge, amazonStoreDomainsReady};`,
         context,
     );
 
     return {api: context.testApi, storage, badgeCalls, chrome};
 }
 
-test('discovers only one distinct tag from supported Amazon URLs', () => {
+test('discovers only one distinct tag from supported Amazon URLs', async () => {
     const {api} = createBackgroundHarness();
+    await api.amazonStoreDomainsReady;
 
     assert.deepEqual(
         JSON.parse(JSON.stringify(
@@ -212,6 +222,7 @@ test('captures full URLs, preserves an existing URL, and updates last access tim
             lastAccessed: '',
         }],
     });
+    await api.amazonStoreDomainsReady;
     const visitedUrl = 'https://www.amazon.com/dp/another?tag=new-20';
 
     assert.deepEqual(

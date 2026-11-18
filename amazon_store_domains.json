@@ -1,0 +1,190 @@
+{
+  "_comment_0": "This file contains a list of Amazon store public domains and their corresponding seller central URLs, organized by region and country.",
+  "stores": [
+    {
+      "region": "Américas",
+      "country": "Brasil",
+      "country_code": "BR",
+      "store_domain": "amazon.com.br",
+      "seller_central": "sellercentral.amazon.com.br"
+    },
+    {
+      "region": "Américas",
+      "country": "Canadá",
+      "country_code": "CA",
+      "store_domain": "amazon.ca",
+      "seller_central": "sellercentral.amazon.ca"
+    },
+    {
+      "region": "Américas",
+      "country": "Estados Unidos",
+      "country_code": "US",
+      "store_domain": "amazon.com",
+      "seller_central": "sellercentral.amazon.com"
+    },
+    {
+      "region": "Américas",
+      "country": "México",
+      "country_code": "MX",
+      "store_domain": "amazon.com.mx",
+      "seller_central": "sellercentral.amazon.com.mx"
+    },
+    {
+      "region": "Europa",
+      "country": "Alemanha",
+      "country_code": "DE",
+      "store_domain": "amazon.de",
+      "seller_central": "sellercentral.amazon.de"
+    },
+    {
+      "region": "Europa",
+      "country": "Bélgica",
+      "country_code": "BE",
+      "store_domain": "amazon.com.be",
+      "seller_central": "sellercentral.amazon.com.be"
+    },
+    {
+      "region": "Europa",
+      "country": "Espanha",
+      "country_code": "ES",
+      "store_domain": "amazon.es",
+      "seller_central": "sellercentral.amazon.es"
+    },
+    {
+      "region": "Europa",
+      "country": "França",
+      "country_code": "FR",
+      "store_domain": "amazon.fr",
+      "seller_central": "sellercentral.amazon.fr"
+    },
+    {
+      "region": "Europa",
+      "country": "Irlanda",
+      "country_code": "IE",
+      "store_domain": "amazon.ie",
+      "seller_central": "sellercentral.amazon.ie"
+    },
+    {
+      "region": "Europa",
+      "country": "Itália",
+      "country_code": "IT",
+      "store_domain": "amazon.it",
+      "seller_central": "sellercentral.amazon.it"
+    },
+    {
+      "region": "Europa",
+      "country": "Países Baixos",
+      "country_code": "NL",
+      "store_domain": "amazon.nl",
+      "seller_central": "sellercentral.amazon.nl"
+    },
+    {
+      "region": "Europa",
+      "country": "Polônia",
+      "country_code": "PL",
+      "store_domain": "amazon.pl",
+      "seller_central": "sellercentral.amazon.pl"
+    },
+    {
+      "region": "Europa",
+      "country": "Reino Unido",
+      "country_code": "GB",
+      "store_domain": "amazon.co.uk",
+      "seller_central": "sellercentral.amazon.co.uk"
+    },
+    {
+      "region": "Europa",
+      "country": "Suécia",
+      "country_code": "SE",
+      "store_domain": "amazon.se",
+      "seller_central": "sellercentral.amazon.se"
+    },
+    {
+      "region": "Europa",
+      "country": "Turquia",
+      "country_code": "TR",
+      "store_domain": "amazon.com.tr",
+      "seller_central": "sellercentral.amazon.com.tr"
+    },
+    {
+      "region": "Ásia e Oceania",
+      "country": "Austrália",
+      "country_code": "AU",
+      "store_domain": "amazon.com.au",
+      "seller_central": "sellercentral.amazon.com.au"
+    },
+    {
+      "region": "Ásia e Oceania",
+      "country": "Índia",
+      "country_code": "IN",
+      "store_domain": "amazon.in",
+      "seller_central": "sellercentral.amazon.in"
+    },
+    {
+      "region": "Ásia e Oceania",
+      "country": "Japão",
+      "country_code": "JP",
+      "store_domain": "amazon.co.jp",
+      "seller_central": "sellercentral-japan.amazon.com"
+    },
+    {
+      "region": "Ásia e Oceania",
+      "country": "Singapura",
+      "country_code": "SG",
+      "store_domain": "amazon.sg",
+      "seller_central": "sellercentral.amazon.sg"
+    },
+    {
+      "region": "Oriente Médio e África",
+      "country": "África do Sul",
+      "country_code": "ZA",
+      "store_domain": "amazon.co.za",
+      "seller_central": "sellercentral.amazon.co.za"
+    },
+    {
+      "region": "Oriente Médio e África",
+      "country": "Arábia Saudita",
+      "country_code": "SA",
+      "store_domain": "amazon.sa",
+      "seller_central": "sellercentral.amazon.sa"
+    },
+    {
+      "region": "Oriente Médio e África",
+      "country": "Egito",
+      "country_code": "EG",
+      "store_domain": "amazon.eg",
+      "seller_central": "sellercentral.amazon.eg"
+    },
+    {
+      "region": "Oriente Médio e África",
+      "country": "Emirados Árabes Unidos",
+      "country_code": "AE",
+      "store_domain": "amazon.ae",
+      "seller_central": "sellercentral.amazon.ae"
+    }
+  ],
+  "additional_domains": {
+    "global_selling_export": [
+      "amazon.cn"
+    ],
+    "redirects": [
+      "amazon.com.sg",
+      "amazon.jp",
+      "amazon.au",
+      "amazon.co"
+    ],
+    "short_links": [
+      "amzn.to",
+      "a.co"
+    ],
+    "media_and_services": [
+      "primevideo.com",
+      "aws.amazon.com"
+    ],
+    "wildcard_subdomains": [
+      "music.amazon.*",
+      "smile.amazon.*",
+      "sellercentral.amazon.*"
+    ]
+  }
+}

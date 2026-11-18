@@ -22,7 +22,6 @@
 
         label {
             display: grid;
-            flex: 1;
             gap: 4px;
         }
 
@@ -66,11 +65,6 @@
         .tag-url-error {
             color: #b00020;
             min-height: 1.2em;
-        }
-
-        .tag-actions {
-            display: flex;
-            gap: 8px;
         }
 
         .toolbar {
@@ -125,7 +119,7 @@
     <input id="import-file" type="file" accept="application/json,.json">
 </section>
 <p id="status" role="status" aria-live="polite"></p>
-<iframe id="extension-footer" src="footer.html" data-i18n-aria-label="extensionFooterFrameTitle" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
+<iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
     <script src="i18n.js"></script>
     <script src="tag-utils.js"></script>
     <script src="options.js"></script>

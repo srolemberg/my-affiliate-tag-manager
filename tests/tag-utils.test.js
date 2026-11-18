@@ -2,15 +2,28 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const test = require('node:test');
+const {before, test} = require('node:test');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(
     path.join(__dirname, '..', 'tag-utils.js'),
     'utf8',
 );
-const utilities = vm.createContext({URL});
+const storeDomains = require('../amazon_store_domains.json');
+const utilities = vm.createContext({
+    URL,
+    chrome: {runtime: {getURL: (fileName) => fileName}},
+    fetch: async () => ({
+        ok: true,
+        status: 200,
+        json: async () => storeDomains,
+    }),
+});
 vm.runInContext(source, utilities);
+
+before(async () => {
+    await utilities.amazonStoreDomainsReady;
+});
 
 test('normalizes tag records and omits per-tag access timestamps', () => {
     const result = utilities.normalizeTagEntries([
@@ -170,17 +183,27 @@ test('derives one tag from a valid HTTP(S) URL and rejects ambiguous or invalid 
     assert.equal(utilities.getTagFromAmazonUrl(null), '');
 });
 
-test('recognizes supported Amazon hostnames and rejects invalid URLs', () => {
-    assert.equal(utilities.isAmazonDomainUrl('https://www.amazon.com/dp/item'), true);
-    assert.equal(utilities.isAmazonDomainUrl('https://amazon.com/'), true);
-    assert.equal(utilities.isAmazonDomainUrl('https://amazon.com.br/'), true);
-    assert.equal(utilities.isAmazonDomainUrl('https://www.amazon.com.br/'), true);
-    assert.equal(utilities.isAmazonDomainUrl('https://aamazon.com/'), false);
-    assert.equal(utilities.isAmazonDomainUrl('https://notamazon.com/'), false);
-    assert.equal(utilities.isAmazonDomainUrl('https://amazon.comexample/'), false);
-    assert.equal(utilities.isAmazonDomainUrl('https://example.com/'), false);
-    assert.equal(utilities.isAmazonDomainUrl('not a URL'), false);
-    assert.equal(utilities.isAmazonDomainUrl(undefined), false);
+test('validates every store domain from JSON and rejects unlisted or spoofed domains', () => {
+    for (const {store_domain: domain} of storeDomains.stores) {
+        assert.equal(
+            utilities.getTagFromAmazonUrl(`https://www.${domain}/?tag=store-20`),
+            'store-20',
+            `${domain} and its subdomains should be supported`,
+        );
+        assert.equal(
+            utilities.getTagFromAmazonUrl(`https://${domain}.attacker.example/?tag=store-20`),
+            '',
+            `${domain}.attacker.example should not be supported`,
+        );
+    }
+
+    for (const domain of storeDomains.additional_domains.redirects) {
+        assert.equal(
+            utilities.getTagFromAmazonUrl(`https://${domain}/?tag=redirect-20`),
+            '',
+            `${domain} is a redirect domain, not a store domain`,
+        );
+    }
 });
 
 test('requires a valid Amazon domain and a tag matching the URL key', () => {
@@ -191,6 +214,13 @@ test('requires a valid Amazon domain and a tag matching the URL key', () => {
     assert.equal(
         utilities.isValidAmazonTagUrl('https://amazon.com.br/?tag=account-20', 'account-20'),
         true,
+    );
+    assert.equal(
+        utilities.isValidAmazonTagUrl(
+            'https://amazon.com.attacker.example/?tag=account-20',
+            'account-20',
+        ),
+        false,
     );
     assert.equal(
         utilities.isValidAmazonTagUrl('https://www.amazon.com/?tag=other-20', 'account-20'),

@@ -137,9 +137,6 @@ function renderTags() {
         urlLabel.append(urlInput, urlError);
         fields.append(tagLabel, descriptionLabel, urlLabel);
 
-        const actions = document.createElement('div');
-        actions.className = 'tag-actions';
-
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
         deleteButton.textContent = chrome.i18n.getMessage('deleteButton');
@@ -159,8 +156,7 @@ function renderTags() {
                     chrome.i18n.getMessage('deleteTagError', getErrorMessage(error));
             }
         });
-        actions.append(deleteButton);
-        item.append(fields, actions);
+        item.append(fields, deleteButton);
         tagList.append(item);
     }
 
@@ -292,6 +288,7 @@ async function loadTags() {
     }
 
     try {
+        await amazonStoreDomainsReady;
         const stored = await chrome.storage.local.get('savedTags');
         savedTags = normalizeTagEntries(stored.savedTags);
         renderTags();

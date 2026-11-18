@@ -10,7 +10,7 @@ This root-level file is the single source of repository instructions for all cod
 - `background.js` monitors tab activation and URL changes, records discovered tags, updates the action badge, and handles tag mutations.
 - `popup.html`/`popup.js` show the global last-access time and open a saved URL in the current or a new tab on every page.
 - `options.html`/`options.js` implement tag/URL management, batch edits, deletion, and JSON import/export.
-- `tag-utils.js` provides shared normalization, merging, Amazon URL parsing, and tag validation. It is loaded using `importScripts()` in the service worker and script tags in both HTML pages.
+- `tag-utils.js` provides shared normalization, merging, Amazon URL parsing, and tag validation. It loads supported store domains from `amazon_store_domains.json` and is loaded using `importScripts()` in the service worker and script tags in both HTML pages.
 - `i18n.js` applies localized text and aria labels to marked HTML elements and formats thrown values for UI errors.
 - Messages are stored in `_locales/pt_BR/messages.json` and `_locales/en/messages.json`. The default language is set by `default_locale` in `manifest.json`.
 - Tests use Node.js's built-in test runner and are located in `tests/`.
@@ -42,7 +42,7 @@ This root-level file is the single source of repository instructions for all cod
   5. Keep the badge decision in one validation flow and read/normalize saved records once; keep the expiration alarm synchronized with access-record writes.
 - Keep tag normalization/merging and Amazon tag URL parsing in `tag-utils.js`; do not recreate equivalent implementations in page scripts or the service worker.
 - Treat storage values, message payloads, and DOM lookups as potentially absent or malformed. Validate required page controls before registering handlers, guard selector results before use, and surface operation failures instead of relying on `TypeError` behavior.
-- Tag keys and descriptions are trimmed, and tag keys remain unique. `getTagFromAmazonUrl()` derives the key only from valid HTTP(S) URLs on supported domains with exactly one distinct non-empty `tag` value; reject ambiguous URLs. The options page shows keys as read-only, and editing a URL changes the derived key.
+- Tag keys and descriptions are trimmed, and tag keys remain unique. `getTagFromAmazonUrl()` derives the key only from valid HTTP(S) URLs on domains listed under `stores` in `amazon_store_domains.json` (or their subdomains), with exactly one distinct non-empty `tag` value; reject ambiguous URLs. Do not treat `additional_domains` as store domains. The options page shows keys as read-only, and editing a URL changes the derived key.
 - JSON export uses `{ "version": 1, "tags": [...] }` with `tag`, `description`, and `url`; the global access record is not exported. Imports also accept older arrays and records without URLs, ignore any imported `lastAccessed`, merge with stored tags, and remove duplicates.
 
 ## Maintenance guidelines
@@ -54,7 +54,7 @@ This root-level file is the single source of repository instructions for all cod
 5. When changing logic, add or update tests in `tests/`. Cover valid results, invalid input, and relevant failures.
 6. Update `README.md` when changing installation, behavior, permissions, tests, import/export, or localization.
 7. Avoid unnecessary dependencies. Prefer native Chrome and Node.js APIs already used by the project.
-8. Use the shared `isAmazonDomainUrl()` rule wherever supported Amazon URLs must be validated. It accepts `amazon.com`, subdomains ending in `.amazon.com`, and domain variants beginning with `amazon.com.`; do not use substring matching.
+8. Use the shared `getTagFromAmazonUrl()` and `isValidAmazonTagUrl()` helpers wherever supported Amazon tag URLs must be validated. Their domain source is `amazon_store_domains.json`'s `stores` array, with subdomains allowed at label boundaries. Do not accept arbitrary hostnames merely because they contain or start with an Amazon domain.
 9. Do not disguise errors with success-shaped values or silent failures; preserve localized UI error messages and useful service-worker logging.
 10. Update JSDoc when changing shared helpers or UI/service-worker behavior. Keep the documentation aligned with the actual DOM and event flows.
 11. Do not include credentials, personal data, or secrets. Do not make destructive changes or discard pre-existing work.
