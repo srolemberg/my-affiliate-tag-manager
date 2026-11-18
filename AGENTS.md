@@ -70,3 +70,7 @@ This root-level file is the single source of repository instructions for all cod
 ## Delivery
 
 Implement the request directly when its scope is clear. When finished, summarize what changed and report the tests run and their results, without mentioning unrelated changes.
+
+## Publication information
+
+Never include information about the Chrome Web Store publication process anywhere in the repository or in documentation, including README.md, AGENTS.md, comments, messages, guides, or other files. This restriction also applies to release, submission, listing, screenshots, privacy-practice, dashboard, and store-package instructions. Do not add such information unless explicitly requested by the maintainer.
