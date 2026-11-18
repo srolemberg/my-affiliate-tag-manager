@@ -1,9 +1,11 @@
 {
   "private": true,
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "test:extension": "node --test tests/extension.test.js"
   },
   "devDependencies": {
-    "@types/chrome": "^0.3.7"
+    "@types/chrome": "^0.3.7",
+    "puppeteer": "^25.18.1"
   }
 }

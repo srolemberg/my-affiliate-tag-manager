@@ -18,11 +18,12 @@ This root-level file is the single source of repository instructions for all cod
 ## Commands
 
 - Run all tests: `npm test`
+- Run the Puppeteer extension smoke test: `npm run test:extension`
 - Run the utility tests: `node --test tests/tag-utils.test.js`
 - Run the service-worker tests: `node --test tests/background.test.js`
 - Run a named test: `node --test --test-name-pattern="test name"`
 - Check a modified JavaScript file: `node --check path/to/file.js`
-- There is no build or lint script. `npm install` is optional and only needed to install Chrome API type definitions for editor support.
+- There is no build or lint script. `npm install` installs Chrome API type definitions and Puppeteer; Puppeteer downloads its compatible browser for the extension smoke test.
 - To load the extension manually, open `chrome://extensions`, enable Developer mode, select **Load unpacked**, and choose the repository root.
 
 ## Data and message flow

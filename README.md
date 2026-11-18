@@ -18,7 +18,7 @@ To enable Chrome API definitions in your editor, run `npm install`. This step is
 
 ## Tests
 
-Run the unit tests with `npm test`. They use Node.js's built-in test runner and do not require additional dependencies.
+Run all tests with `npm test`. The unit tests use Node.js's built-in test runner; the Puppeteer smoke test also launches the bundled Chromium browser, loads the unpacked Manifest V3 extension, checks its service worker and manifest, and exercises invalid/valid tag entry and popup rendering. Run only the browser smoke test with `npm run test:extension`. Installing dependencies with `npm install` downloads Puppeteer's compatible browser if it is not already available.
 
 ## Popup and notification badge
 
