@@ -167,3 +167,56 @@ test('requires a valid Amazon domain and a tag matching the URL key', () => {
         false,
     );
 });
+
+test('evaluates badge states for explicit and inferred saved keys', () => {
+    const savedTags = [
+        {tag: 'active-20', url: 'https://www.amazon.com/?tag=active-20'},
+        {tag: 'other-20', url: 'https://www.amazon.com/?tag=other-20'},
+    ];
+    const recentAccess = {
+        tag: 'active-20',
+        lastAccessed: '2026-01-01T00:00:00.000Z',
+    };
+    const now = Date.parse('2026-01-01T12:00:00.000Z');
+
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/?tag=active-20',
+            savedTags,
+            recentAccess,
+            now,
+        ),
+        'valid',
+    );
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/?tag=other-20',
+            savedTags,
+            recentAccess,
+            now,
+        ),
+        'different',
+    );
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/',
+            savedTags,
+            recentAccess,
+            now,
+        ),
+        'different',
+    );
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/',
+            savedTags,
+            {...recentAccess, lastAccessed: '2025-12-30T00:00:00.000Z'},
+            now,
+        ),
+        'expired',
+    );
+    assert.equal(
+        utilities.getBadgeStatus('https://example.com/', savedTags, recentAccess, now),
+        'hidden',
+    );
+});

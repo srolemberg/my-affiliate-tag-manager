@@ -14,26 +14,8 @@
   "selectTag": {
     "message": "Selecione uma tag"
   },
-  "automaticDetectionNote": {
-    "message": "As tags são detectadas automaticamente. Use esta lista para abrir uma URL salva."
-  },
-  "amazonCookieNote": {
-    "message": "A tag de afiliado da Amazon não precisa permanecer visível na barra de endereços durante a navegação. A Amazon grava um cookie no navegador que rastreia as compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL."
-  },
-  "sessionWarning": {
-    "message": "A sessão é gerenciada pela Amazon; por isso, a extensão não pode garantir que a alteração tenha efeito imediato."
-  },
   "manageTagsLink": {
     "message": "Abrir configurações e gerenciar tags"
-  },
-  "invalidDomainUnavailable": {
-    "message": "Não foi possível identificar a URL da aba ativa."
-  },
-  "invalidDomainForTags": {
-    "message": "Esta página não pertence a um domínio compatível com a Amazon."
-  },
-  "invalidDomainValidation": {
-    "message": "Não foi possível validar o domínio desta página."
   },
   "addTagInSettings": {
     "message": "Adicione uma tag nas configurações para começar."
@@ -304,5 +286,53 @@
   },
   "extensionFooterFrameTitle": {
     "message": "Versão da extensão e autor do projeto"
+  },
+  "badgeStatusValid": {
+    "message": "Link de afiliado válido salvo"
+  },
+  "badgeStatusDifferentKey": {
+    "message": "URL de afiliado válida e salva com chave diferente da última acessada"
+  },
+  "badgeStatusExpired": {
+    "message": "A chave de afiliado acessada expirou"
+  },
+  "badgeStatusInvalid": {
+    "message": "Esta URL não contém uma tag de afiliado válida e salva"
+  },
+  "badgeStatusHidden": {
+    "message": "A notificação não se aplica a este domínio."
+  },
+  "badgeLegendTitle": {
+    "message": "Sobre o ícone de notificação"
+  },
+  "badgeLegendValid": {
+    "message": "A URL contém uma chave salva igual à última acessada."
+  },
+  "badgeLegendDifferent": {
+    "message": "A chave salva é diferente da última acessada, ou a URL não mostra a chave e o último acesso ainda é recente."
+  },
+  "badgeLegendInvalid": {
+    "message": "A chave da URL não está salva, é inválida ou o último acesso inferido expirou (24 horas)."
+  },
+  "howItWorksHeading": {
+    "message": "Como funciona"
+  },
+  "howItWorksCapture": {
+    "message": "Ao visitar uma página cuja URL contém uma chave de afiliado, a extensão identifica e armazena essa URL em uma lista interna. Assim, você pode acessá-la rapidamente sem precisar procurá-la novamente."
+  },
+  "howItWorksExpiry": {
+    "message": "A extensão também acompanha a janela de 24 horas associada à chave, para informar quando esse período pode ter terminado. Esse indicador não confirma a expiração da sessão da Amazon mas pode significar que seja preciso renovar a sessão relacionada a chave de afiliado."
+  },
+  "howItWorksOpen": {
+    "message": "A tag de afiliado não precisa permanecer visível na barra de endereços durante a navegação: a Amazon pode armazená-la em um cookie que rastreia compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL."
+  },
+  "howItWorksPrivacy": {
+    "message": "A extensão não coleta nem envia dados. As chaves e URLs são gerenciadas localmente no navegador, sem conexão com serviços externos; abrir uma URL salva exige conexão com o site. Você pode consultar o código-fonte pelo link no nome do autor, no rodapé da extensão."
+  },
+  "privacyHeading": {
+    "message": "Privacidade e dados"
+  },
+  "howItWorksDisclaimer": {
+    "message": "A sessão é gerenciada pela Amazon. Por isso, a extensão não pode garantir que uma alteração tenha efeito imediato nem confirmar o estado da sessão."
   }
 }

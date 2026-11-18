@@ -14,26 +14,8 @@
   "selectTag": {
     "message": "Select a tag"
   },
-  "automaticDetectionNote": {
-    "message": "Tags are detected automatically. Use this list to open a saved URL."
-  },
-  "amazonCookieNote": {
-    "message": "The Amazon affiliate tag does not need to remain visible in the address bar while browsing. Amazon stores a cookie in the browser that tracks purchases for the next 24 hours, even if the parameter disappears from the URL."
-  },
-  "sessionWarning": {
-    "message": "The session is managed by Amazon, so the extension cannot guarantee that the change will take effect immediately."
-  },
   "manageTagsLink": {
     "message": "Open settings and manage tags"
-  },
-  "invalidDomainUnavailable": {
-    "message": "Could not identify the active tab's URL."
-  },
-  "invalidDomainForTags": {
-    "message": "This page is not on a supported Amazon domain."
-  },
-  "invalidDomainValidation": {
-    "message": "Could not validate this page's domain."
   },
   "addTagInSettings": {
     "message": "Add a tag in settings to get started."
@@ -304,5 +286,53 @@
   },
   "extensionFooterFrameTitle": {
     "message": "Extension version and project author"
+  },
+  "badgeStatusValid": {
+    "message": "Valid affiliate link saved"
+  },
+  "badgeStatusDifferentKey": {
+    "message": "Valid saved affiliate URL with a different key than the latest accessed one"
+  },
+  "badgeStatusExpired": {
+    "message": "The last accessed affiliate key has expired"
+  },
+  "badgeStatusInvalid": {
+    "message": "This URL has no valid saved affiliate tag"
+  },
+  "badgeStatusHidden": {
+    "message": "Notifications do not apply to this domain."
+  },
+  "badgeLegendTitle": {
+    "message": "About the notification icon"
+  },
+  "badgeLegendValid": {
+    "message": "The URL has a saved key that matches the most recently accessed key."
+  },
+  "badgeLegendDifferent": {
+    "message": "The saved key differs from the most recently accessed key, or the URL omits the key and the last access is still recent."
+  },
+  "badgeLegendInvalid": {
+    "message": "The URL key is invalid or not saved, or the inferred last access has expired (24 hours)."
+  },
+  "howItWorksHeading": {
+    "message": "How it works"
+  },
+  "howItWorksCapture": {
+    "message": "When you visit a page whose URL contains an affiliate key, the extension identifies and stores that URL in an internal list. This lets you access it quickly without searching for it again."
+  },
+  "howItWorksExpiry": {
+    "message": "The extension also tracks the 24-hour window associated with the key to indicate when that period may have ended. This indicator cannot confirm that your Amazon session has expired, but it may mean that the session associated with the affiliate key needs to be renewed."
+  },
+  "howItWorksOpen": {
+    "message": "The affiliate tag does not need to remain visible in the address bar while browsing: Amazon may store it in a cookie that tracks purchases for the next 24 hours, even if the parameter disappears from the URL."
+  },
+  "howItWorksPrivacy": {
+    "message": "The extension does not collect or send data. Keys and URLs are managed locally in your browser without connecting to external services; opening a saved URL requires a connection to that website. You can view the source code through the link on the author's name in the extension footer."
+  },
+  "privacyHeading": {
+    "message": "Privacy and data"
+  },
+  "howItWorksDisclaimer": {
+    "message": "Amazon manages the session. Therefore, the extension cannot guarantee that a change will take effect immediately or confirm the session status."
   }
 }

@@ -27,8 +27,14 @@ function createBackgroundHarness(initialStorage = {}) {
             async setBadgeText(details) {
                 badgeCalls.push({type: 'text', ...details});
             },
+            async setBadgeTextColor(details) {
+                badgeCalls.push({type: 'text-color', ...details});
+            },
             async setBadgeBackgroundColor(details) {
                 badgeCalls.push({type: 'color', ...details});
+            },
+            async setTitle(details) {
+                badgeCalls.push({type: 'title', ...details});
             },
         },
         i18n: {
@@ -42,6 +48,7 @@ function createBackgroundHarness(initialStorage = {}) {
             onMessage: createEvent(),
         },
         storage: {
+            onChanged: createEvent(),
             local: {
                 async get(key) {
                     if (Array.isArray(key)) {
@@ -73,6 +80,17 @@ function createBackgroundHarness(initialStorage = {}) {
         },
         webNavigation: {
             onCompleted: createEvent(),
+        },
+        alarms: {
+            onAlarm: createEvent(),
+            async clear(name) {
+                delete chrome.alarms.scheduled[name];
+                return true;
+            },
+            create(name, details) {
+                chrome.alarms.scheduled[name] = details;
+            },
+            scheduled: {},
         },
     };
 
@@ -206,15 +224,18 @@ test('captures full URLs, preserves an existing URL, and updates last access tim
     assert.ok(Date.parse(storage.lastAccessedTag.lastAccessed));
 });
 
-test('records access through popup requests and requires valid original URLs', async () => {
+test('records extension access and requires valid URLs', async () => {
     const originalUrl = 'https://www.amazon.com/dp/item?tag=account-20';
-    const {api, storage} = createBackgroundHarness({
+    const {api, storage, chrome} = createBackgroundHarness({
         savedTags: [{tag: 'account-20', url: originalUrl}],
     });
 
     await api.mutateStoredTags({type: 'access', tag: 'account-20'});
     assert.equal(storage.lastAccessedTag.tag, 'account-20');
     assert.ok(Date.parse(storage.lastAccessedTag.lastAccessed));
+    const expiry = chrome.alarms.scheduled['affiliate-tag-access-expiry'].when;
+    assert.ok(expiry > Date.now());
+    assert.ok(expiry <= Date.now() + 24 * 60 * 60 * 1000);
 
     await assert.rejects(
         api.mutateStoredTags({
@@ -332,19 +353,134 @@ test('deletes all tags from storage', async () => {
     assert.equal(Object.hasOwn(storage, 'lastAccessedTag'), false);
 });
 
-test('sets badge text and color for tagged, untagged, and non-Amazon URLs', async () => {
-    const {api, badgeCalls} = createBackgroundHarness();
+test('sets a green check for a valid saved affiliate URL', async () => {
+    const {api, badgeCalls} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'account-20',
+            url: 'https://www.amazon.com/dp/item?tag=account-20',
+        }],
+        lastAccessedTag: {
+            tag: 'account-20',
+            lastAccessed: new Date().toISOString(),
+        },
+    });
 
-    await api.updateBadge('https://www.amazon.com/?tag=account-20');
-    await api.updateBadge('https://www.amazon.com/');
-    await api.updateBadge('https://example.com/');
-
+    await api.updateBadge('https://www.amazon.com/dp/item?tag=account-20');
     assert.deepEqual(badgeCalls, [
-        {type: 'text', text: '!'},
-        {type: 'color', color: '#008000'},
-        {type: 'text', text: '!'},
-        {type: 'color', color: '#ff0000'},
+        {type: 'text', text: '✓'},
+        {type: 'text-color', color: '#ffffff'},
+        {type: 'color', color: '#188038'},
+        {type: 'title', title: 'badgeStatusValid'},
+    ]);
+});
+
+test('shows yellow for a bare Amazon URL with a saved, unexpired last-access key', async () => {
+    const {api, badgeCalls} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'account-20',
+            description: 'Account',
+            url: 'https://www.amazon.com/dp/item?tag=account-20',
+        }],
+        lastAccessedTag: {
+            tag: 'account-20',
+            lastAccessed: new Date().toISOString(),
+        },
+    });
+
+    await api.updateBadge('https://www.amazon.com/');
+    assert.equal(badgeCalls[0].text, '!');
+    assert.equal(badgeCalls[2].color, '#f9ab00');
+    assert.equal(badgeCalls[3].title, 'badgeStatusDifferentKey');
+});
+
+test('shows yellow for a saved inferred key until its last-access time expires', async () => {
+    const {api, badgeCalls} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'account-20',
+            url: 'https://www.amazon.com/dp/item?tag=account-20',
+        }],
+        lastAccessedTag: {
+            tag: 'account-20',
+            lastAccessed: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
+        },
+    });
+
+    await api.updateBadge('https://www.amazon.com/');
+    assert.equal(badgeCalls[0].text, '!');
+    assert.equal(badgeCalls[2].color, '#f9ab00');
+    assert.equal(badgeCalls[3].title, 'badgeStatusDifferentKey');
+});
+
+test('shows red for a saved inferred key after its last-access time expires', async () => {
+    const {api, badgeCalls} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'account-20',
+            url: 'https://www.amazon.com/dp/item?tag=account-20',
+        }],
+        lastAccessedTag: {
+            tag: 'account-20',
+            lastAccessed: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(),
+        },
+    });
+
+    await api.updateBadge('https://www.amazon.com/');
+    assert.equal(badgeCalls[0].text, 'x');
+    assert.equal(badgeCalls[2].color, '#d93025');
+    assert.equal(badgeCalls[3].title, 'badgeStatusExpired');
+});
+
+test('sets a yellow exclamation mark when a valid saved key differs from the last accessed key', async () => {
+    const {api, badgeCalls} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'second-20',
+            url: 'https://www.amazon.com/?tag=second-20',
+        }],
+        lastAccessedTag: {
+            tag: 'account-20',
+            lastAccessed: '2025-01-01T00:00:00.000Z',
+        },
+    });
+
+    await api.updateBadge('https://www.amazon.com/?tag=second-20');
+    assert.equal(badgeCalls[0].text, '!');
+    assert.equal(badgeCalls[2].color, '#f9ab00');
+    assert.equal(badgeCalls[3].title, 'badgeStatusDifferentKey');
+});
+
+test('sets a red x for missing or unsaved tags', async () => {
+    const {api, badgeCalls} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'account-20',
+            url: 'https://www.amazon.com/?tag=account-20',
+        }],
+    });
+
+    await api.updateBadge('https://www.amazon.com/');
+    assert.equal(badgeCalls[0].text, 'x');
+    assert.equal(badgeCalls[3].title, 'badgeStatusInvalid');
+
+    badgeCalls.length = 0;
+    await api.updateBadge('https://www.amazon.com/?tag=');
+    assert.equal(badgeCalls[0].text, 'x');
+    assert.equal(badgeCalls[3].title, 'badgeStatusInvalid');
+
+    badgeCalls.length = 0;
+    await api.updateBadge('https://www.amazon.com/?tag=unknown-20');
+    assert.equal(badgeCalls[0].text, 'x');
+    assert.equal(badgeCalls[3].title, 'badgeStatusInvalid');
+});
+
+test('hides the badge for unsupported domains', async () => {
+    const {api, badgeCalls} = createBackgroundHarness({
+        savedTags: [{
+            tag: 'account-20',
+            url: 'https://www.amazon.com/?tag=account-20',
+        }],
+    });
+
+    await api.updateBadge('https://example.com/');
+    assert.deepEqual(badgeCalls, [
         {type: 'text', text: ''},
-        {type: 'color', color: '#ff0000'},
+        {type: 'title', title: 'appName'},
     ]);
 });

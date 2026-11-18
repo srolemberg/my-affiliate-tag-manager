@@ -7,35 +7,17 @@ const tagSelect = document.getElementById('saved-tag');
 const openCurrentTabButton = document.getElementById('open-current-tab-button');
 const openNewTabButton = document.getElementById('open-new-tab-button');
 const statusElement = document.getElementById('status');
-const tagForm = document.getElementById('tag-form');
-const amazonContent = document.getElementById('amazon-content');
-const domainMessage = document.getElementById('domain-message');
 let savedTags = [];
 
 /**
  * Loads the active tab and saved records, displays the global last-access
- * record, and populates the selector. Hides controls on unsupported domains.
+ * record, displays the notification state, and populates the selector.
  * @returns {Promise<void>}
  */
 async function loadPopup() {
     try {
         const tabs = await chrome.tabs.query({active: true, currentWindow: true});
         const activeTab = tabs[0];
-        if (!activeTab?.url) {
-            amazonContent.hidden = true;
-            domainMessage.textContent = chrome.i18n.getMessage('invalidDomainUnavailable');
-            domainMessage.hidden = false;
-            return;
-        }
-
-        const currentUrl = new URL(activeTab.url);
-        if (!isAmazonDomainUrl(activeTab.url)) {
-            amazonContent.hidden = true;
-            domainMessage.textContent = chrome.i18n.getMessage('invalidDomainForTags');
-            domainMessage.hidden = false;
-            return;
-        }
-
         const stored = await chrome.storage.local.get([
             'savedTags',
             'lastAccessedTag',
@@ -72,7 +54,9 @@ async function loadPopup() {
         } else {
             detectedTagElement.textContent = chrome.i18n.getMessage('noAccessRecorded');
         }
-        tagForm.dataset.tabId = String(activeTab.id);
+        tagSelect.dataset.tabId = Number.isInteger(activeTab?.id)
+            ? String(activeTab.id)
+            : '';
 
         for (const entry of savedTags) {
             const option = document.createElement('option');
@@ -91,9 +75,7 @@ async function loadPopup() {
             statusElement.textContent = chrome.i18n.getMessage('savedUrlRequired');
         }
     } catch (error) {
-        amazonContent.hidden = true;
-        domainMessage.textContent = chrome.i18n.getMessage('invalidDomainValidation');
-        domainMessage.hidden = false;
+        statusElement.textContent = chrome.i18n.getMessage('popupLoadError');
         console.error(chrome.i18n.getMessage('popupLoadError'), error);
     }
 }
@@ -102,18 +84,23 @@ async function loadPopup() {
 tagSelect.addEventListener('change', () => {
     const selected = savedTags.find((entry) => entry.tag === tagSelect.value);
     const canOpen = Boolean(selected && isValidAmazonTagUrl(selected.url, selected.tag));
-    openCurrentTabButton.disabled = !canOpen;
+    const hasTabId = tagSelect.dataset.tabId !== '' &&
+        Number.isInteger(Number(tagSelect.dataset.tabId));
+    openCurrentTabButton.disabled =
+        !canOpen || !hasTabId;
     openNewTabButton.disabled = !canOpen;
 });
 
 /** Opens the selected saved URL and updates the global last-access record. */
 async function openSelectedTag(openInNewTab) {
-    const tabId = Number(tagForm.dataset.tabId);
+    const hasTabId = tagSelect.dataset.tabId !== '' &&
+        Number.isInteger(Number(tagSelect.dataset.tabId));
+    const tabId = hasTabId ? Number(tagSelect.dataset.tabId) : undefined;
     const selectedTag = tagSelect.value;
     const selected = savedTags.find((entry) => entry.tag === selectedTag);
 
     if (!selected || !isValidAmazonTagUrl(selected.url, selected.tag) ||
-        (!openInNewTab && !Number.isInteger(tabId))) {
+        (!openInNewTab && !hasTabId)) {
         statusElement.textContent = chrome.i18n.getMessage('selectValidTag');
         return;
     }

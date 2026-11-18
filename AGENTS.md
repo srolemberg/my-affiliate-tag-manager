@@ -30,7 +30,15 @@ This root-level file is the single source of repository instructions for all cod
 - The canonical list key is `savedTags` in `chrome.storage.local`. Records use `{ tag: string, description: string, url: string }`; `tag` is derived from the single distinct `tag` query value in the HTTP(S) URL. The single global `{ tag, lastAccessed }` access record is stored separately as `lastAccessedTag`. Legacy per-record timestamps are consolidated during migration.
 - The options page sends `{ type: 'tags:mutate', operation }` messages to the service worker and expects either `{ tags }` or `{ error }`.
 - `background.js` serializes mutations through `tagMutationQueue`; route tag-list writes through this queue rather than writing directly from the options page.
-- Merge operations retain existing descriptions when incoming entries have none. `webNavigation.onCompleted` for the main frame on a supported URL preserves an existing URL, captures the full URL for a new tag, and replaces the global `lastAccessedTag` record with the last tag in that URL and an ISO 8601 timestamp. Popup launches replace that record as well; tab focus and `tabs.onUpdated` do not.
+- Merge operations retain existing descriptions when incoming entries have none. `webNavigation.onCompleted` for the main frame on a supported URL preserves an existing URL and captures the full URL for a new tag. Completed navigation and popup opens update the global key and timestamp. Tab focus and `tabs.onUpdated` do not change access timestamps.
+- The badge shows a green check for an explicit valid saved URL whose key matches the global last-access key, a yellow exclamation mark for an explicit valid saved URL whose key differs, and a red x for an invalid or unsaved URL. On a supported Amazon URL with no `tag` parameter, the global last-access key can identify the saved URL only when that key exists in the saved records and its original URL is valid; this inferred state is yellow until its access timestamp reaches 24 hours, then red. An alarm refreshes the badge at expiry.
+- `getBadgeStatus()` in `tag-utils.js` is the single source of notification-state evaluation; use it in both the service worker badge and popup status display.
+- Badge validation rules for future changes:
+  1. Parse the active URL once; hide the badge when parsing fails or its hostname is not a supported Amazon hostname.
+  2. Only HTTP(S) URLs can provide/infer a key. An explicit `tag` parameter must contain one non-empty distinct value; repeated identical values are accepted, while empty or conflicting values are invalid and must not fall back to the last-access key.
+  3. If there is no `tag` parameter, infer the key from `lastAccessedTag` only for a supported HTTP(S) URL. The inferred key must match a saved record whose original URL validates for that key.
+  4. For an explicit saved key, show green when it matches `lastAccessedTag.tag`, otherwise yellow. For an inferred saved key, show yellow while its valid `lastAccessed` timestamp is less than 24 hours old, otherwise red. Missing/invalid saved records and invalid explicit values are red.
+  5. Keep the badge decision in one validation flow and read/normalize saved records once; keep the expiration alarm synchronized with access-record writes.
 - Tag keys and descriptions are trimmed, and tag keys remain unique. `getTagFromAmazonUrl()` derives the key only from valid HTTP(S) URLs on supported domains with exactly one distinct non-empty `tag` value; reject ambiguous URLs. The options page shows keys as read-only, and editing a URL changes the derived key.
 - JSON export uses `{ "version": 1, "tags": [...] }` with `tag`, `description`, and `url`; the global access record is not exported. Imports also accept older arrays and records without URLs, ignore any imported `lastAccessed`, merge with stored tags, and remove duplicates.
 
@@ -38,7 +46,7 @@ This root-level file is the single source of repository instructions for all cod
 
 1. Read the files related to the request and follow existing patterns. Do not change files or behavior outside the scope.
 2. Make surgical changes and preserve compatibility with stored data and JSON import/export formats.
-3. Keep extension permissions to the minimum necessary. `webNavigation` distinguishes completed main-frame navigations from tab activation for last-access timestamps; document permission changes in README.
+3. Keep extension permissions to the minimum necessary. `webNavigation` distinguishes completed main-frame navigations from tab activation for last-access timestamps; `alarms` refreshes the inferred-key badge state at 24 hours. Document permission changes in README.
 4. Put new user-facing text in both locale catalogs. Keep message identifiers and placeholders consistent; use `data-i18n`/`data-i18n-aria-label` in HTML and `chrome.i18n.getMessage()` in JavaScript. HTML scripts load `i18n.js` and `tag-utils.js` before the page-specific script.
 5. When changing logic, add or update tests in `tests/`. Cover valid results, invalid input, and relevant failures.
 6. Update `README.md` when changing installation, behavior, permissions, tests, import/export, or localization.

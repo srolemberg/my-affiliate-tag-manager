@@ -7,6 +7,8 @@ importScripts('tag-utils.js');
 
 const TAG_STORAGE_KEY = 'savedTags';
 const LAST_ACCESSED_STORAGE_KEY = 'lastAccessedTag';
+const ACCESS_EXPIRY_ALARM = 'affiliate-tag-access-expiry';
+const ACCESS_VALIDITY_MS = 24 * 60 * 60 * 1000;
 let latestUpdate = 0;
 let tagMutationQueue = Promise.resolve();
 
@@ -214,10 +216,16 @@ function mutateStoredTags(operation) {
                         TAG_STORAGE_KEY,
                         LAST_ACCESSED_STORAGE_KEY,
                     ]);
-                    updatedTags = normalizeTagEntries(
-                        (await chrome.storage.local.get(TAG_STORAGE_KEY))[TAG_STORAGE_KEY],
-                    );
-                    if (updatedTags.length > 0) {
+                    await safelyScheduleAccessExpiry(null);
+                    const remainingData = await chrome.storage.local.get([
+                        TAG_STORAGE_KEY,
+                        LAST_ACCESSED_STORAGE_KEY,
+                    ]);
+                    updatedTags = normalizeTagEntries(remainingData[TAG_STORAGE_KEY]);
+                    if (
+                        updatedTags.length > 0 ||
+                        remainingData[LAST_ACCESSED_STORAGE_KEY] != null
+                    ) {
                         throw new Error(chrome.i18n.getMessage('storageDeleteError'));
                     }
                     return updatedTags;
@@ -245,6 +253,7 @@ function mutateStoredTags(operation) {
                 [TAG_STORAGE_KEY]: updatedTags,
                 [LAST_ACCESSED_STORAGE_KEY]: lastAccessedTag,
             });
+            void safelyScheduleAccessExpiry(lastAccessedTag);
             return updatedTags;
         },
     );
@@ -292,28 +301,46 @@ function getAmazonTags(url) {
 }
 
 /**
- * Sets the badge marker for supported domains and colors it by `tag` presence.
+ * Sets the badge from the active URL and global last-access record. For a bare
+ * Amazon URL, the inferred saved key is yellow until its 24-hour access window
+ * expires, then red.
  * @param {string|undefined} url URL of the tab to represent.
  * @returns {Promise<void>}
  */
 async function updateBadge(url) {
-    let parsedUrl;
-    try {
-        parsedUrl = url ? new URL(url) : undefined;
-    } catch {
-        parsedUrl = undefined;
+    const stored = await chrome.storage.local.get([
+        TAG_STORAGE_KEY,
+        LAST_ACCESSED_STORAGE_KEY,
+    ]);
+    const status = getBadgeStatus(
+        url,
+        stored[TAG_STORAGE_KEY],
+        stored[LAST_ACCESSED_STORAGE_KEY],
+    );
+    if (status === 'hidden') {
+        await hideBadge();
+        return;
     }
 
-    const isAmazonDomain = Boolean(
-        parsedUrl && isAmazonHostname(parsedUrl.hostname),
-    );
-    const hasTag = isAmazonDomain && parsedUrl.searchParams.has('tag');
-
+    const badge = {
+        valid: {text: '✓', color: '#188038', title: 'badgeStatusValid'},
+        different: {text: '!', color: '#f9ab00', title: 'badgeStatusDifferentKey'},
+        expired: {text: 'x', color: '#d93025', title: 'badgeStatusExpired'},
+        invalid: {text: 'x', color: '#d93025', title: 'badgeStatusInvalid'},
+    }[status];
     await Promise.all([
-        chrome.action.setBadgeText({text: isAmazonDomain ? '!' : ''}),
-        chrome.action.setBadgeBackgroundColor({
-            color: hasTag ? '#008000' : '#ff0000',
-        }),
+        chrome.action.setBadgeText({text: badge.text}),
+        chrome.action.setBadgeTextColor({color: '#ffffff'}),
+        chrome.action.setBadgeBackgroundColor({color: badge.color}),
+        chrome.action.setTitle({title: chrome.i18n.getMessage(badge.title)}),
+    ]);
+}
+
+/** Hides the badge outside supported Amazon domains. */
+async function hideBadge() {
+    await Promise.all([
+        chrome.action.setBadgeText({text: ''}),
+        chrome.action.setTitle({title: chrome.i18n.getMessage('appName')}),
     ]);
 }
 
@@ -328,6 +355,37 @@ async function safelyUpdateBadge(url) {
     } catch (error) {
         console.error(chrome.i18n.getMessage('updateBadgeError'), error);
     }
+}
+
+/**
+ * Schedules a refresh at the end of the latest key's 24-hour validity period.
+ * @param {{lastAccessed?: string}|null|undefined} accessRecord Global access record.
+ * @returns {Promise<void>}
+ */
+async function scheduleAccessExpiry(accessRecord) {
+    await chrome.alarms.clear(ACCESS_EXPIRY_ALARM);
+    const lastAccessTime = Date.parse(accessRecord?.lastAccessed);
+    const expiration = lastAccessTime + ACCESS_VALIDITY_MS;
+    if (Number.isNaN(lastAccessTime) || expiration <= Date.now()) {
+        return;
+    }
+
+    chrome.alarms.create(ACCESS_EXPIRY_ALARM, {when: expiration});
+}
+
+/** Logs alarm scheduling failures without failing an already-persisted mutation. */
+async function safelyScheduleAccessExpiry(accessRecord) {
+    try {
+        await scheduleAccessExpiry(accessRecord);
+    } catch (error) {
+        console.error('Failed to schedule affiliate badge expiration:', error);
+    }
+}
+
+/** Restores the expiry alarm from the persisted global access record. */
+async function restoreAccessExpiryAlarm() {
+    const stored = await chrome.storage.local.get(LAST_ACCESSED_STORAGE_KEY);
+    await safelyScheduleAccessExpiry(stored[LAST_ACCESSED_STORAGE_KEY]);
 }
 
 /**
@@ -407,7 +465,7 @@ chrome.tabs.onActivated.addListener(({tabId}) => {
 /** Records a tag only after the main-frame navigation completes successfully. */
 chrome.webNavigation.onCompleted.addListener(({frameId, url}) => {
     if (frameId === 0) {
-        return saveDiscoveredTags(url);
+        return saveDiscoveredTags(url).then(updateBadgeForActiveTab);
     }
 });
 
@@ -420,11 +478,37 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 
 /** Initializes the badge after installation or an extension update. */
 chrome.runtime.onInstalled.addListener(() => {
+    void restoreAccessExpiryAlarm().catch((error) => {
+        console.error('Failed to restore affiliate badge expiration:', error);
+    });
     void updateBadgeForActiveTab();
 });
 /** Initializes the badge when Chrome starts. */
 chrome.runtime.onStartup.addListener(() => {
+    void restoreAccessExpiryAlarm().catch((error) => {
+        console.error('Failed to restore affiliate badge expiration:', error);
+    });
     void updateBadgeForActiveTab();
+});
+
+/** Refreshes the active tab's badge when saved records change. */
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local') {
+        return;
+    }
+    if (changes[LAST_ACCESSED_STORAGE_KEY]) {
+        void safelyScheduleAccessExpiry(changes[LAST_ACCESSED_STORAGE_KEY].newValue);
+    }
+    if (changes[TAG_STORAGE_KEY] || changes[LAST_ACCESSED_STORAGE_KEY]) {
+        void updateBadgeForActiveTab();
+    }
+});
+
+/** Re-evaluates the active badge when the latest access reaches 24 hours. */
+chrome.alarms.onAlarm.addListener(({name}) => {
+    if (name === ACCESS_EXPIRY_ALARM) {
+        void updateBadgeForActiveTab();
+    }
 });
 
 /** Handles saved-tag operations requested by an extension page. */

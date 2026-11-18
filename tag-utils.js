@@ -157,6 +157,57 @@ function isValidAmazonTagUrl(url, tag) {
 }
 
 /**
+ * Evaluates the notification state for a page using the saved key list.
+ * @param {string|undefined} url Active page URL.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>} entries Saved records.
+ * @param {{tag?: string, lastAccessed?: string}|null|undefined} accessRecord Latest accessed key and time.
+ * @param {number} now Current timestamp for expiration checks.
+ * @returns {'valid'|'different'|'expired'|'invalid'|'hidden'} Notification state.
+ */
+function getBadgeStatus(url, entries, accessRecord, now = Date.now()) {
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(url);
+    } catch {
+        return 'hidden';
+    }
+
+    if (!isAmazonHostname(parsedUrl.hostname)) {
+        return 'hidden';
+    }
+
+    const supportedProtocol =
+        parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    const tagValues = supportedProtocol
+        ? parsedUrl.searchParams.getAll('tag')
+        : [];
+    const uniqueTags = [...new Set(tagValues.map((tag) => tag.trim()))];
+    const hasExplicitTag = tagValues.length > 0;
+    const explicitTag = hasExplicitTag &&
+        tagValues.every((tag) => tag.trim()) &&
+        uniqueTags.length === 1
+        ? uniqueTags[0]
+        : '';
+    const isInferredTag = supportedProtocol && !hasExplicitTag;
+    const accessTag =
+        typeof accessRecord?.tag === 'string' ? accessRecord.tag.trim() : '';
+    const tag = explicitTag || (isInferredTag ? accessTag : '');
+    const savedEntry = normalizeTagEntries(entries)
+        .find((entry) => entry.tag === tag);
+    if (!tag || !savedEntry || !isValidAmazonTagUrl(savedEntry.url, tag)) {
+        return 'invalid';
+    }
+
+    if (isInferredTag) {
+        const accessAge = now - Date.parse(accessRecord?.lastAccessed);
+        return accessAge >= 0 && accessAge < 24 * 60 * 60 * 1000
+            ? 'different'
+            : 'expired';
+    }
+    return accessTag === tag ? 'valid' : 'different';
+}
+
+/**
  * Checks whether a URL uses `amazon.com`, one of its subdomains, or a regional domain.
  * @param {string|undefined} url URL to inspect.
  * @returns {boolean} Whether the URL uses a supported Amazon hostname.

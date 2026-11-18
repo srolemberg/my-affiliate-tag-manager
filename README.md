@@ -25,8 +25,11 @@ On a supported domain, the popup:
 - Updates the global last-access record to the selected tag when it is opened.
 - Provides a link to the tag management page.
 - Shows the extension version and a project link labeled with the author's name in a light-gray footer shared with the options page.
+- Uses the badge to show link status: green check when a valid saved URL's key matches the latest accessed key, yellow exclamation mark when the valid saved URL has a different key, and red x when the URL has no valid saved tag. On a bare supported Amazon URL without a `tag` parameter, a valid saved record matching the latest accessed key shows yellow until the 24-hour access window expires, then red.
+- Displays the latest access with its key and date, then the tag selector and horizontal open buttons. A horizontal rule separates these controls from the settings button and the collapsed “How it works”, privacy/data, and badge-icon explanations.
+- Explains the green, yellow, and red badge states in the popup.
 
-On other domains, the popup displays a message that the domain is not supported and provides a link to manage tags.
+The popup keeps the same layout on every page. On domains where notification status does not apply, it explains that in the status area while leaving saved-tag controls and settings available.
 
 ## Tag management
 
@@ -40,7 +43,9 @@ On the options page, you can:
 - Import a JSON file or export the current list.
 - Shows the extension version and a project link labeled with the author's name in the shared light-gray footer.
 
-After a supported Amazon page's main-frame navigation completes, tags in its URL are saved with the full URL and the single global last-access record is set to the last tag in that URL. Opening a saved URL in the popup also replaces that global record. Switching focus to an already open tab does not update it. Existing per-tag access timestamps are consolidated to the latest one when migrating stored data. The global access record is shown only in the popup and is not included in exports. Tag keys remain unique. Existing data without a saved URL stays compatible; a later completed navigation can populate it, or it can be entered in tag management.
+After a supported Amazon page's main-frame navigation completes, its tag and full URL are saved. The global last-access record is updated for a completed navigation or when a saved URL is opened from the popup. Switching focus to an already open tab does not update access time. Existing per-tag access timestamps are consolidated to the latest one when migrating stored data. The global access record is shown only in the popup and is not included in exports. Tag keys remain unique. Existing data without a saved URL stays compatible; a later completed navigation can populate it, or it can be entered in tag management.
+
+The badge turns green with a white check when the current URL has a valid affiliate tag and its key matches the global last-access key. For a supported Amazon URL without a `tag` parameter, the extension uses the global last-access key only if that key exists in the saved records and its saved original URL is valid; the badge is yellow while that key's last-access timestamp is less than 24 hours old, then turns red. The badge is also yellow with a white exclamation mark when an explicit, valid saved URL has a different key from the last-access key. It turns red with a white x when there is no valid saved key to associate with the current URL. An alarm refreshes the badge when the inferred key's 24-hour window expires.
 
 ## JSON import and export
 
@@ -77,6 +82,7 @@ This project was developed with the assistance of artificial intelligence tools.
 - `tabs`: reads the tab URL and tracks navigation and tab changes.
 - `storage`: stores tags locally in the browser.
 - `webNavigation`: detects successfully completed main-frame navigations so access timestamps are not changed by tab focus alone.
+- `alarms`: refreshes the badge when the inferred key's 24-hour access window expires.
 
 ## Main files
 

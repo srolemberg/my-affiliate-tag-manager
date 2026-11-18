@@ -6,28 +6,27 @@
     <title data-i18n="appName">Minhas Tags de Afiliado</title>
     <style>
         body {
+            box-sizing: border-box;
+            display: grid;
             font: 14px Arial, sans-serif;
-            margin: 16px;
+            gap: 8px;
+            margin: 0;
+            padding: 8px 32px 52px 16px;
             width: 320px;
         }
 
-        #detected-tag {
-            overflow-wrap: anywhere;
+        body * {
+            margin: 0;
+            min-width: 0;
         }
 
-        .session-warning {
-            color: red;
+        #amazon-content,
+        #tag-form {
+            display: contents;
         }
 
-        label, select, button {
-            display: block;
-            margin-top: 10px;
-        }
-
-        select, button {
-            box-sizing: border-box;
-            padding: 7px;
-            width: 100%;
+        #amazon-content[hidden] {
+            display: none;
         }
 
         .open-buttons {
@@ -38,43 +37,128 @@
         .open-buttons button {
             flex: 1;
             min-width: 0;
+            width: auto;
         }
 
-        #status {
-            min-height: 1.2em;
+        details {
+            display: grid;
+            gap: 8px;
+        }
+
+        details.how-it-works {
+            gap: 0;
+        }
+
+        details.how-it-works summary {
+            margin-bottom: 8px;
+        }
+
+        details.how-it-works p + p {
+            margin-top: 8px;
+        }
+
+        .how-it-works .disclaimer {
+            color: #d93025;
+        }
+
+        #manage-tags-link {
+            background: #f0f0f0;
+            border: 1px solid #888;
+            border-radius: 2px;
+            box-sizing: border-box;
+            color: inherit;
+            padding: 7px;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #ccc;
+            height: 0;
+            width: 100%;
+        }
+
+        #detected-tag {
+            overflow-wrap: anywhere;
+        }
+
+        .badge-legend {
+            display: grid;
+            gap: 8px;
+            padding-left: 20px;
+        }
+
+        .badge-legend-symbol {
+            font-weight: bold;
+        }
+
+        .badge-legend-valid {
+            color: #188038;
+        }
+
+        .badge-legend-different {
+            color: #b26a00;
+        }
+
+        .badge-legend-invalid {
+            color: #d93025;
+        }
+
+        select, button {
+            box-sizing: border-box;
+            padding: 7px;
+            width: 100%;
         }
 
         #extension-footer {
             border: 0;
             display: block;
             height: 36px;
-            margin: 16px -16px -16px;
-            width: calc(100% + 32px);
+            left: 0;
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            width: 100%;
         }
     </style>
 </head>
 <body>
 <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
-<p id="domain-message" role="status" hidden></p>
-<main id="amazon-content">
+<section id="amazon-content">
     <p id="detected-tag" aria-live="polite" data-i18n="checkingTag">Verificando tag...</p>
-
-    <form id="tag-form">
-        <label for="saved-tag" data-i18n="affiliateTag">Tag de afiliado</label>
-        <select id="saved-tag" required>
-            <option value="" selected data-i18n="selectTag">Selecione uma tag</option>
-        </select>
-        <small data-i18n="automaticDetectionNote">As tags são detectadas automaticamente. Use esta lista para abrir uma URL salva.</small>
-        <div class="open-buttons">
-            <button id="open-current-tab-button" type="button" disabled data-i18n="openCurrentTabButton">Abrir na aba atual</button>
-            <button id="open-new-tab-button" type="button" disabled data-i18n="openNewTabButton">Abrir em nova aba</button>
-        </div>
-        <small data-i18n="amazonCookieNote">A tag de afiliado da Amazon não precisa permanecer visível na barra de endereços durante a navegação. A Amazon grava um cookie no navegador que rastreia as compras durante as próximas 24 horas, mesmo que o parâmetro desapareça da URL.</small>
-        <p class="session-warning" data-i18n="sessionWarning">A sessão é gerenciada pela Amazon; por isso, a extensão não pode garantir que a alteração tenha efeito imediato.</p>
-    </form>
+    <label for="saved-tag" data-i18n="affiliateTag">Tag de afiliado</label>
+    <select id="saved-tag" required>
+        <option value="" selected data-i18n="selectTag">Selecione uma tag</option>
+    </select>
+    <div class="open-buttons">
+        <button id="open-current-tab-button" type="button" disabled data-i18n="openCurrentTabButton">Abrir na aba atual</button>
+        <button id="open-new-tab-button" type="button" disabled data-i18n="openNewTabButton">Abrir em nova aba</button>
+    </div>
     <p id="status" role="status" aria-live="polite"></p>
-</main>
+</section>
+<hr>
 <a id="manage-tags-link" href="options.html" target="_blank" data-i18n="manageTagsLink" data-i18n-aria-label="manageTagsLink" data-i18n-title="manageTagsLink" title="Abrir configurações e gerenciar tags">Abrir configurações e gerenciar tags</a>
+<details class="how-it-works">
+    <summary data-i18n="howItWorksHeading">Como funciona</summary>
+    <p data-i18n="howItWorksCapture">Ao visitar uma página cuja URL contém uma chave de afiliado, a extensão identifica e armazena essa URL em uma lista interna. Assim, você pode acessá-la rapidamente sem precisar procurá-la novamente.</p>
+    <p data-i18n="howItWorksExpiry">A extensão também acompanha a janela de 24 horas associada à chave, para informar quando esse período pode ter terminado. Esse indicador não confirma a expiração da sessão da Amazon nem significa necessariamente que seja preciso renovar credenciais.</p>
+    <p data-i18n="howItWorksOpen">Use a lista para abrir uma URL salva. A tag de afiliado não precisa permanecer visível na barra de endereços durante a navegação: a Amazon pode armazená-la em um cookie que rastreia compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL.</p>
+    <p class="disclaimer" data-i18n="howItWorksDisclaimer">A sessão é gerenciada pela Amazon. Por isso, a extensão não pode garantir que uma alteração tenha efeito imediato nem confirmar o estado da sessão.</p>
+</details>
+<details>
+    <summary data-i18n="badgeLegendTitle">O que significa a badge</summary>
+    <ul class="badge-legend">
+        <li><span class="badge-legend-symbol badge-legend-valid">✓</span> <span data-i18n="badgeLegendValid">A URL contém uma chave salva igual à última acessada.</span></li>
+        <li><span class="badge-legend-symbol badge-legend-different">!</span> <span data-i18n="badgeLegendDifferent">A chave salva é diferente da última acessada, ou a URL não mostra a chave e o último acesso ainda é recente.</span></li>
+        <li><span class="badge-legend-symbol badge-legend-invalid">x</span> <span data-i18n="badgeLegendInvalid">A chave da URL não está salva, é inválida ou o último acesso inferido expirou (24 horas).</span></li>
+    </ul>
+</details>
+<details>
+    <summary data-i18n="privacyHeading">Privacidade e dados</summary>
+    <p data-i18n="howItWorksPrivacy">A extensão não coleta nem envia dados. As chaves e URLs são gerenciadas localmente no navegador, sem conexão com serviços externos; abrir uma URL salva exige conexão com o site. Você pode consultar o código-fonte pelo link no nome do autor, no rodapé da extensão.</p>
+</details>
 <iframe id="extension-footer" src="footer.html" data-i18n-aria-label="extensionFooterFrameTitle" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
 <script src="i18n.js"></script>
 <script src="tag-utils.js"></script>
