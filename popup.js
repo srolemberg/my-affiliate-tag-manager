@@ -1,36 +1,63 @@
 /**
- * Controls the extension popup: checks the active tab's domain, displays the
- * global last-access record, and opens saved URLs in the current or a new tab.
+ * Controls the extension popup: displays the global last-access record and
+ * opens saved URLs in the current tab or a new tab.
  */
 const detectedTagElement = document.getElementById('detected-tag');
 const tagSelect = document.getElementById('saved-tag');
 const openCurrentTabButton = document.getElementById('open-current-tab-button');
 const openNewTabButton = document.getElementById('open-new-tab-button');
 const statusElement = document.getElementById('status');
+const popupElements = {
+    'detected-tag': detectedTagElement,
+    'saved-tag': tagSelect,
+    'open-current-tab-button': openCurrentTabButton,
+    'open-new-tab-button': openNewTabButton,
+    status: statusElement,
+};
+const popupReady = Object.values(popupElements).every(Boolean);
 let savedTags = [];
 
+if (!popupReady) {
+    const missingElements = Object.entries(popupElements)
+        .filter(([, element]) => !element)
+        .map(([id]) => `#${id}`);
+    console.error(`Popup is missing required elements: ${missingElements.join(', ')}`);
+}
+
+/** Updates the popup status only when its optional status node exists. */
+function setPopupStatus(message) {
+    if (statusElement) {
+        statusElement.textContent = message;
+    }
+}
+
 /**
- * Loads the active tab and saved records, displays the global last-access
- * record, displays the notification state, and populates the selector.
+ * Loads saved records, displays the global last-access record, and populates
+ * the selector. No active-tab data is required for rendering saved entries.
  * @returns {Promise<void>}
  */
 async function loadPopup() {
+    if (!popupReady) {
+        return;
+    }
+
     try {
         const tabs = await chrome.tabs.query({active: true, currentWindow: true});
-        const activeTab = tabs[0];
+        const activeTab = tabs?.[0];
         const stored = await chrome.storage.local.get([
             'savedTags',
             'lastAccessedTag',
         ]);
-        savedTags = normalizeTagEntries(stored.savedTags);
-        let lastAccessedTag = stored.lastAccessedTag;
+        savedTags = normalizeTagEntries(stored?.savedTags);
+        let lastAccessedTag = stored?.lastAccessedTag;
         if (
             !lastAccessedTag ||
             typeof lastAccessedTag.tag !== 'string' ||
+            !lastAccessedTag.tag.trim() ||
             typeof lastAccessedTag.lastAccessed !== 'string' ||
             Number.isNaN(Date.parse(lastAccessedTag.lastAccessed))
         ) {
-            lastAccessedTag = getLatestAccessRecord(stored.savedTags);
+            lastAccessedTag = getLatestAccessRecord(stored?.savedTags);
             if (lastAccessedTag) {
                 await chrome.storage.local.set({
                     savedTags,
@@ -40,6 +67,10 @@ async function loadPopup() {
         }
 
         if (lastAccessedTag) {
+            lastAccessedTag = {
+                ...lastAccessedTag,
+                tag: lastAccessedTag.tag.trim(),
+            };
             const accessedDate = new Date(lastAccessedTag.lastAccessed);
             const date = new Intl.DateTimeFormat(undefined, {
                 dateStyle: 'short',
@@ -75,24 +106,32 @@ async function loadPopup() {
             statusElement.textContent = chrome.i18n.getMessage('savedUrlRequired');
         }
     } catch (error) {
-        statusElement.textContent = chrome.i18n.getMessage('popupLoadError');
+        setPopupStatus(chrome.i18n.getMessage('popupLoadError'));
         console.error(chrome.i18n.getMessage('popupLoadError'), error);
     }
 }
 
 /** Enables URL-opening buttons when the selected record has a valid URL. */
-tagSelect.addEventListener('change', () => {
+tagSelect?.addEventListener('change', () => {
     const selected = savedTags.find((entry) => entry.tag === tagSelect.value);
     const canOpen = Boolean(selected && isValidAmazonTagUrl(selected.url, selected.tag));
     const hasTabId = tagSelect.dataset.tabId !== '' &&
         Number.isInteger(Number(tagSelect.dataset.tabId));
-    openCurrentTabButton.disabled =
-        !canOpen || !hasTabId;
-    openNewTabButton.disabled = !canOpen;
+    if (openCurrentTabButton) {
+        openCurrentTabButton.disabled = !canOpen || !hasTabId;
+    }
+    if (openNewTabButton) {
+        openNewTabButton.disabled = !canOpen;
+    }
 });
 
 /** Opens the selected saved URL and updates the global last-access record. */
 async function openSelectedTag(openInNewTab) {
+    if (!tagSelect) {
+        setPopupStatus(chrome.i18n.getMessage('selectValidTag'));
+        return;
+    }
+
     const hasTabId = tagSelect.dataset.tabId !== '' &&
         Number.isInteger(Number(tagSelect.dataset.tabId));
     const tabId = hasTabId ? Number(tagSelect.dataset.tabId) : undefined;
@@ -101,7 +140,7 @@ async function openSelectedTag(openInNewTab) {
 
     if (!selected || !isValidAmazonTagUrl(selected.url, selected.tag) ||
         (!openInNewTab && !hasTabId)) {
-        statusElement.textContent = chrome.i18n.getMessage('selectValidTag');
+        setPopupStatus(chrome.i18n.getMessage('selectValidTag'));
         return;
     }
 
@@ -124,16 +163,19 @@ async function openSelectedTag(openInNewTab) {
         }
         window.close();
     } catch (error) {
-        statusElement.textContent =
-            chrome.i18n.getMessage('openSavedUrlError', error.message);
+        setPopupStatus(
+            chrome.i18n.getMessage('openSavedUrlError', getErrorMessage(error)),
+        );
     }
 }
 
-openCurrentTabButton.addEventListener('click', () => {
+openCurrentTabButton?.addEventListener('click', () => {
     void openSelectedTag(false);
 });
-openNewTabButton.addEventListener('click', () => {
+openNewTabButton?.addEventListener('click', () => {
     void openSelectedTag(true);
 });
 
-void loadPopup();
+if (popupReady) {
+    void loadPopup();
+}

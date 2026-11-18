@@ -1,7 +1,12 @@
 /** Displays the extension version in the shared footer. */
 const footerLabel = document.getElementById('footer-label');
-footerLabel.textContent = chrome.i18n.getMessage(
-    'extensionFooter',
-    chrome.runtime.getManifest().version,
-);
-footerLabel.append(document.createTextNode(' '));
+const extensionVersion = chrome.runtime.getManifest()?.version;
+if (!footerLabel || typeof extensionVersion !== 'string') {
+    console.error('Could not render the extension footer: required data is missing.');
+} else {
+    footerLabel.textContent = chrome.i18n.getMessage(
+        'extensionFooter',
+        extensionVersion,
+    );
+    footerLabel.append(document.createTextNode(' '));
+}

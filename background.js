@@ -8,39 +8,8 @@ importScripts('tag-utils.js');
 const TAG_STORAGE_KEY = 'savedTags';
 const LAST_ACCESSED_STORAGE_KEY = 'lastAccessedTag';
 const ACCESS_EXPIRY_ALARM = 'affiliate-tag-access-expiry';
-const ACCESS_VALIDITY_MS = 24 * 60 * 60 * 1000;
 let latestUpdate = 0;
 let tagMutationQueue = Promise.resolve();
-
-/**
- * Merges records by key, retaining existing descriptions when incoming ones
- * are empty and optionally preferring existing URLs.
- * @param {Array<string|{tag: string, description?: string, url?: string}>} existingEntries Records currently saved.
- * @param {Array<string|{tag: string, description?: string, url?: string}>} incomingEntries Records to merge.
- * @param {boolean} preserveExistingUrls Whether saved URLs take precedence over incoming URLs.
- * @returns {{tag: string, description: string, url: string}[]} The merged, normalized records.
- */
-function mergeTagEntries(existingEntries, incomingEntries, preserveExistingUrls = false) {
-    const mergedEntries = new Map(
-        normalizeTagEntries(existingEntries).map(
-            /** Creates a key-to-record entry for the map. */
-            (entry) => [entry.tag, entry],
-        ),
-    );
-
-    for (const entry of normalizeTagEntries(incomingEntries)) {
-        const existing = mergedEntries.get(entry.tag);
-        mergedEntries.set(entry.tag, {
-            tag: entry.tag,
-            description: entry.description || existing?.description || '',
-            url: preserveExistingUrls
-                ? existing?.url || entry.url
-                : entry.url || existing?.url || '',
-        });
-    }
-
-    return [...mergedEntries.values()];
-}
 
 /**
  * Serializes a tag operation, applies it to stored data, and persists the result.
@@ -55,15 +24,15 @@ function mutateStoredTags(operation) {
                 TAG_STORAGE_KEY,
                 LAST_ACCESSED_STORAGE_KEY,
             ]);
-            const tags = normalizeTagEntries(stored[TAG_STORAGE_KEY]);
-            let lastAccessedTag = stored[LAST_ACCESSED_STORAGE_KEY];
+            const tags = normalizeTagEntries(stored?.[TAG_STORAGE_KEY]);
+            let lastAccessedTag = stored?.[LAST_ACCESSED_STORAGE_KEY];
             if (
                 !lastAccessedTag ||
                 typeof lastAccessedTag.tag !== 'string' ||
                 typeof lastAccessedTag.lastAccessed !== 'string' ||
                 Number.isNaN(Date.parse(lastAccessedTag.lastAccessed))
             ) {
-                lastAccessedTag = getLatestAccessRecord(stored[TAG_STORAGE_KEY]);
+                lastAccessedTag = getLatestAccessRecord(stored?.[TAG_STORAGE_KEY]);
             }
             let updatedTags;
 
@@ -221,10 +190,10 @@ function mutateStoredTags(operation) {
                         TAG_STORAGE_KEY,
                         LAST_ACCESSED_STORAGE_KEY,
                     ]);
-                    updatedTags = normalizeTagEntries(remainingData[TAG_STORAGE_KEY]);
+                    updatedTags = normalizeTagEntries(remainingData?.[TAG_STORAGE_KEY]);
                     if (
                         updatedTags.length > 0 ||
-                        remainingData[LAST_ACCESSED_STORAGE_KEY] != null
+                        remainingData?.[LAST_ACCESSED_STORAGE_KEY] != null
                     ) {
                         throw new Error(chrome.i18n.getMessage('storageDeleteError'));
                     }
@@ -269,7 +238,7 @@ function mutateStoredTags(operation) {
 
 /**
  * Returns a record when a supported URL contains exactly one distinct tag.
- * @param {string|undefined} url URL to inspect.
+ * @param {string|undefined|null} url URL to inspect.
  * @returns {{tag: string, url: string}[]} The derived key and its source URL, or an empty array.
  */
 function getAmazonTagEntries(url) {
@@ -282,29 +251,10 @@ function getAmazonTagEntries(url) {
 }
 
 /**
- * Extracts and deduplicates non-empty tag values from a supported Amazon URL.
- * @param {string|undefined} url URL to inspect.
- * @returns {string[]} Normalized tag values, or an empty array for an invalid URL.
- */
-function getAmazonTags(url) {
-    if (!url || !isAmazonDomainUrl(url)) {
-        return [];
-    }
-
-    try {
-        return normalizeTagEntries(new URL(url).searchParams.getAll('tag')).map(
-            (entry) => entry.tag,
-        );
-    } catch {
-        return [];
-    }
-}
-
-/**
  * Sets the badge from the active URL and global last-access record. For a bare
  * Amazon URL, the inferred saved key is yellow until its 24-hour access window
  * expires, then red.
- * @param {string|undefined} url URL of the tab to represent.
+ * @param {string|undefined|null} url URL of the tab to represent.
  * @returns {Promise<void>}
  */
 async function updateBadge(url) {
@@ -314,8 +264,8 @@ async function updateBadge(url) {
     ]);
     const status = getBadgeStatus(
         url,
-        stored[TAG_STORAGE_KEY],
-        stored[LAST_ACCESSED_STORAGE_KEY],
+        stored?.[TAG_STORAGE_KEY],
+        stored?.[LAST_ACCESSED_STORAGE_KEY],
     );
     if (status === 'hidden') {
         await hideBadge();
@@ -346,7 +296,7 @@ async function hideBadge() {
 
 /**
  * Updates the badge while logging Chrome API failures.
- * @param {string|undefined} url URL of the tab to represent.
+ * @param {string|undefined|null} url URL of the tab to represent.
  * @returns {Promise<void>}
  */
 async function safelyUpdateBadge(url) {
@@ -365,7 +315,7 @@ async function safelyUpdateBadge(url) {
 async function scheduleAccessExpiry(accessRecord) {
     await chrome.alarms.clear(ACCESS_EXPIRY_ALARM);
     const lastAccessTime = Date.parse(accessRecord?.lastAccessed);
-    const expiration = lastAccessTime + ACCESS_VALIDITY_MS;
+    const expiration = lastAccessTime + TAG_ACCESS_VALIDITY_MS;
     if (Number.isNaN(lastAccessTime) || expiration <= Date.now()) {
         return;
     }
@@ -385,12 +335,12 @@ async function safelyScheduleAccessExpiry(accessRecord) {
 /** Restores the expiry alarm from the persisted global access record. */
 async function restoreAccessExpiryAlarm() {
     const stored = await chrome.storage.local.get(LAST_ACCESSED_STORAGE_KEY);
-    await safelyScheduleAccessExpiry(stored[LAST_ACCESSED_STORAGE_KEY]);
+    await safelyScheduleAccessExpiry(stored?.[LAST_ACCESSED_STORAGE_KEY]);
 }
 
 /**
  * Saves a discovered tag and records access after navigation completes.
- * @param {string|undefined} url URL from the completed navigation.
+ * @param {string|undefined|null} url URL from the completed navigation.
  * @returns {Promise<void>}
  */
 async function saveDiscoveredTags(url) {
@@ -418,7 +368,7 @@ async function updateBadgeForTab(tabId) {
             return;
         }
 
-        await safelyUpdateBadge(tab.url);
+        await safelyUpdateBadge(tab?.url);
     } catch (error) {
         if (requestId !== latestUpdate) {
             return;
@@ -524,7 +474,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
         )
         .catch(
             /** Sends the operation error to the requesting page. */
-            (error) => sendResponse({error: error.message}),
+            (error) => sendResponse({
+                error: error instanceof Error ? error.message : String(error),
+            }),
         );
     return true;
 });

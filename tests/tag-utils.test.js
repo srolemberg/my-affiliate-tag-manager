@@ -36,16 +36,45 @@ test('selects the latest legacy per-tag timestamp for migration', () => {
     assert.deepEqual(
         JSON.parse(JSON.stringify(utilities.getLatestAccessRecord([
             {tag: 'older-20', lastAccessed: '2026-01-01T00:00:00.000Z'},
-            {tag: 'newer-20', lastAccessed: '2026-01-02T00:00:00.000Z'},
+            {tag: ' newer-20 ', lastAccessed: '2026-01-02T00:00:00.000Z'},
             {tag: 'invalid-20', lastAccessed: 'not a date'},
+            {tag: '   ', lastAccessed: '2026-01-03T00:00:00.000Z'},
+            null,
         ]))),
         {tag: 'newer-20', lastAccessed: '2026-01-02T00:00:00.000Z'},
     );
+    assert.equal(utilities.getLatestAccessRecord(null), null);
 });
 
 test('returns an empty list when tag entries are not an array', () => {
     assert.deepEqual(
         JSON.parse(JSON.stringify(utilities.normalizeTagEntries(null))),
+        [],
+    );
+});
+
+test('merges records once while preserving existing metadata as configured', () => {
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(utilities.mergeTagEntries(
+            [
+                {tag: 'saved-20', description: 'Saved description', url: 'https://www.amazon.com/?tag=saved-20'},
+                {tag: 'legacy-20', description: 'Legacy description'},
+            ],
+            [
+                {tag: 'saved-20', description: '', url: 'https://www.amazon.com/dp/new?tag=saved-20'},
+                {tag: 'legacy-20', description: '', url: 'https://www.amazon.com/?tag=legacy-20'},
+                {tag: 'new-20', description: 'New description'},
+            ],
+            true,
+        ))),
+        [
+            {tag: 'saved-20', description: 'Saved description', url: 'https://www.amazon.com/?tag=saved-20'},
+            {tag: 'legacy-20', description: 'Legacy description', url: 'https://www.amazon.com/?tag=legacy-20'},
+            {tag: 'new-20', description: 'New description', url: ''},
+        ],
+    );
+    assert.deepEqual(
+        JSON.parse(JSON.stringify(utilities.mergeTagEntries(null, null))),
         [],
     );
 });
@@ -138,6 +167,7 @@ test('derives one tag from a valid HTTP(S) URL and rejects ambiguous or invalid 
         utilities.getTagFromAmazonUrl('https://www.amazon.com/?tag='),
         '',
     );
+    assert.equal(utilities.getTagFromAmazonUrl(null), '');
 });
 
 test('recognizes supported Amazon hostnames and rejects invalid URLs', () => {
@@ -217,6 +247,19 @@ test('evaluates badge states for explicit and inferred saved keys', () => {
     );
     assert.equal(
         utilities.getBadgeStatus('https://example.com/', savedTags, recentAccess, now),
+        'hidden',
+    );
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/',
+            savedTags,
+            null,
+            now,
+        ),
+        'invalid',
+    );
+    assert.equal(
+        utilities.getBadgeStatus(null, null, null, now),
         'hidden',
     );
 });

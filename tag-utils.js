@@ -1,7 +1,10 @@
+/** Shared duration for inferred access status and its badge refresh alarm. */
+const TAG_ACCESS_VALIDITY_MS = 24 * 60 * 60 * 1000;
+
 /**
  * Normalizes legacy strings and record objects into unique tag records.
  * Later duplicate records can update metadata while blank values preserve earlier data.
- * @param {Array<string|{tag: string, description?: string, url?: string}>} entries Records to normalize.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>|null|undefined} entries Records to normalize.
  * @returns {{tag: string, description: string, url: string}[]} Unique normalized records.
  */
 function normalizeTagEntries(entries) {
@@ -41,6 +44,34 @@ function normalizeTagEntries(entries) {
     }
 
     return [...normalized.values()];
+}
+
+/**
+ * Merges normalized records by key while keeping useful existing metadata.
+ * Incoming non-empty descriptions replace saved descriptions. URLs can be
+ * configured to preserve existing values, as required for automatic capture.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>} existingEntries Records currently saved.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>} incomingEntries Records to merge.
+ * @param {boolean} preserveExistingUrls Whether saved URLs take precedence.
+ * @returns {{tag: string, description: string, url: string}[]} Unique merged records.
+ */
+function mergeTagEntries(existingEntries, incomingEntries, preserveExistingUrls = false) {
+    const mergedEntries = new Map(
+        normalizeTagEntries(existingEntries).map((entry) => [entry.tag, entry]),
+    );
+
+    for (const entry of normalizeTagEntries(incomingEntries)) {
+        const existing = mergedEntries.get(entry.tag);
+        mergedEntries.set(entry.tag, {
+            tag: entry.tag,
+            description: entry.description || existing?.description || '',
+            url: preserveExistingUrls
+                ? existing?.url || entry.url
+                : entry.url || existing?.url || '',
+        });
+    }
+
+    return [...mergedEntries.values()];
 }
 
 /**
@@ -92,7 +123,7 @@ function getTagUrlValidationErrors(entries) {
 
 /**
  * Selects the newest valid per-tag timestamp while migrating legacy records.
- * @param {Array<{tag: string, lastAccessed: string}>|undefined} entries Legacy saved records.
+ * @param {Array<{tag: string, lastAccessed: string}>|null|undefined} entries Legacy saved records.
  * @returns {{tag: string, lastAccessed: string}|null} The latest access record, or null.
  */
 function getLatestAccessRecord(entries) {
@@ -100,27 +131,49 @@ function getLatestAccessRecord(entries) {
         return null;
     }
 
-    return entries
-        .filter((entry) => (
-            typeof entry?.tag === 'string' &&
-            typeof entry.lastAccessed === 'string' &&
-            !Number.isNaN(Date.parse(entry.lastAccessed))
-        ))
-        .sort((left, right) => (
-            Date.parse(left.lastAccessed) - Date.parse(right.lastAccessed)
-        ))
-        .map(({tag, lastAccessed}) => ({tag, lastAccessed}))
-        .at(-1) || null;
+    let latestRecord = null;
+    let latestTimestamp = -Infinity;
+    for (const entry of entries) {
+        const tag = typeof entry?.tag === 'string' ? entry.tag.trim() : '';
+        const lastAccessed = entry?.lastAccessed;
+        if (!tag || typeof lastAccessed !== 'string') {
+            continue;
+        }
+
+        const timestamp = Date.parse(lastAccessed);
+        if (!Number.isNaN(timestamp) && timestamp >= latestTimestamp) {
+            latestRecord = {tag, lastAccessed};
+            latestTimestamp = timestamp;
+        }
+    }
+
+    return latestRecord;
 }
 
 /**
  * Derives a key from a supported HTTP(S) URL containing one distinct non-empty `tag` value.
- * @param {string|undefined} url URL to inspect.
+ * @param {string|undefined|null} url URL to inspect.
  * @returns {string} The derived key, or an empty string for invalid or ambiguous URLs.
  */
 function getTagFromAmazonUrl(url) {
-    if (typeof url !== 'string' || !url) {
+    const tagValues = getAmazonTagValues(url);
+    if (!tagValues || tagValues.length === 0 || tagValues.some((tag) => !tag)) {
         return '';
+    }
+
+    const uniqueTags = [...new Set(tagValues)];
+    return uniqueTags.length === 1 ? uniqueTags[0] : '';
+}
+
+/**
+ * Parses tag values once after validating the URL protocol and Amazon hostname.
+ * Empty values are preserved so callers can reject ambiguous or incomplete URLs.
+ * @param {string|undefined|null} url URL to inspect.
+ * @returns {string[]|null} Trimmed values, or null when the URL is unsupported.
+ */
+function getAmazonTagValues(url) {
+    if (typeof url !== 'string' || !url) {
+        return null;
     }
 
     try {
@@ -129,24 +182,17 @@ function getTagFromAmazonUrl(url) {
             !isAmazonHostname(parsedUrl.hostname) ||
             (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:')
         ) {
-            return '';
+            return null;
         }
-
-        const tagValues = parsedUrl.searchParams.getAll('tag');
-        if (tagValues.length === 0 || tagValues.some((tag) => !tag.trim())) {
-            return '';
-        }
-
-        const uniqueTags = [...new Set(tagValues.map((tag) => tag.trim()))];
-        return uniqueTags.length === 1 ? uniqueTags[0] : '';
+        return parsedUrl.searchParams.getAll('tag').map((tag) => tag.trim());
     } catch {
-        return '';
+        return null;
     }
 }
 
 /**
  * Checks whether a supported URL derives exactly the supplied key.
- * @param {string|undefined} url URL to validate.
+ * @param {string|undefined|null} url URL to validate.
  * @param {string} tag Expected key.
  * @returns {boolean} Whether the URL is valid and contains the expected key.
  */
@@ -158,8 +204,8 @@ function isValidAmazonTagUrl(url, tag) {
 
 /**
  * Evaluates the notification state for a page using the saved key list.
- * @param {string|undefined} url Active page URL.
- * @param {Array<string|{tag: string, description?: string, url?: string}>} entries Saved records.
+ * @param {string|undefined|null} url Active page URL.
+ * @param {Array<string|{tag: string, description?: string, url?: string}>|null|undefined} entries Saved records.
  * @param {{tag?: string, lastAccessed?: string}|null|undefined} accessRecord Latest accessed key and time.
  * @param {number} now Current timestamp for expiration checks.
  * @returns {'valid'|'different'|'expired'|'invalid'|'hidden'} Notification state.
@@ -200,7 +246,7 @@ function getBadgeStatus(url, entries, accessRecord, now = Date.now()) {
 
     if (isInferredTag) {
         const accessAge = now - Date.parse(accessRecord?.lastAccessed);
-        return accessAge >= 0 && accessAge < 24 * 60 * 60 * 1000
+        return accessAge >= 0 && accessAge < TAG_ACCESS_VALIDITY_MS
             ? 'different'
             : 'expired';
     }
@@ -209,7 +255,7 @@ function getBadgeStatus(url, entries, accessRecord, now = Date.now()) {
 
 /**
  * Checks whether a URL uses `amazon.com`, one of its subdomains, or a regional domain.
- * @param {string|undefined} url URL to inspect.
+ * @param {string|undefined|null} url URL to inspect.
  * @returns {boolean} Whether the URL uses a supported Amazon hostname.
  */
 function isAmazonDomainUrl(url) {

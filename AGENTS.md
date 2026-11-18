@@ -8,10 +8,10 @@ This root-level file is the single source of repository instructions for all cod
 - Detects the `tag` parameter in URLs on `amazon.com` and its domain variants, stores tag keys, original URLs, and descriptions in `chrome.storage.local`, and keeps a single global most-recent access record for the popup.
 - `manifest.json` registers `background.js` as the service worker and the popup/options pages as extension interfaces.
 - `background.js` monitors tab activation and URL changes, records discovered tags, updates the action badge, and handles tag mutations.
-- `popup.html`/`popup.js` show last-access time and open a saved URL in the current or a new tab.
+- `popup.html`/`popup.js` show the global last-access time and open a saved URL in the current or a new tab on every page.
 - `options.html`/`options.js` implement tag/URL management, batch edits, deletion, and JSON import/export.
-- `tag-utils.js` provides shared normalization and Amazon URL/tag validation. It is loaded using `importScripts()` in the service worker and script tags in both HTML pages.
-- `i18n.js` applies localized text and aria labels to marked HTML elements.
+- `tag-utils.js` provides shared normalization, merging, Amazon URL parsing, and tag validation. It is loaded using `importScripts()` in the service worker and script tags in both HTML pages.
+- `i18n.js` applies localized text and aria labels to marked HTML elements and formats thrown values for UI errors.
 - Messages are stored in `_locales/pt_BR/messages.json` and `_locales/en/messages.json`. The default language is set by `default_locale` in `manifest.json`.
 - Tests use Node.js's built-in test runner and are located in `tests/`.
 
@@ -32,13 +32,16 @@ This root-level file is the single source of repository instructions for all cod
 - `background.js` serializes mutations through `tagMutationQueue`; route tag-list writes through this queue rather than writing directly from the options page.
 - Merge operations retain existing descriptions when incoming entries have none. `webNavigation.onCompleted` for the main frame on a supported URL preserves an existing URL and captures the full URL for a new tag. Completed navigation and popup opens update the global key and timestamp. Tab focus and `tabs.onUpdated` do not change access timestamps.
 - The badge shows a green check for an explicit valid saved URL whose key matches the global last-access key, a yellow exclamation mark for an explicit valid saved URL whose key differs, and a red x for an invalid or unsaved URL. On a supported Amazon URL with no `tag` parameter, the global last-access key can identify the saved URL only when that key exists in the saved records and its original URL is valid; this inferred state is yellow until its access timestamp reaches 24 hours, then red. An alarm refreshes the badge at expiry.
-- `getBadgeStatus()` in `tag-utils.js` is the single source of notification-state evaluation; use it in both the service worker badge and popup status display.
+- `TAG_ACCESS_VALIDITY_MS` in `tag-utils.js` is the shared 24-hour duration for inferred badge status and the service-worker alarm.
+- `getBadgeStatus()` in `tag-utils.js` is the single source of notification-state evaluation used by the service worker to update the toolbar badge. The popup does not display a separate notification-status field.
 - Badge validation rules for future changes:
   1. Parse the active URL once; hide the badge when parsing fails or its hostname is not a supported Amazon hostname.
   2. Only HTTP(S) URLs can provide/infer a key. An explicit `tag` parameter must contain one non-empty distinct value; repeated identical values are accepted, while empty or conflicting values are invalid and must not fall back to the last-access key.
   3. If there is no `tag` parameter, infer the key from `lastAccessedTag` only for a supported HTTP(S) URL. The inferred key must match a saved record whose original URL validates for that key.
   4. For an explicit saved key, show green when it matches `lastAccessedTag.tag`, otherwise yellow. For an inferred saved key, show yellow while its valid `lastAccessed` timestamp is less than 24 hours old, otherwise red. Missing/invalid saved records and invalid explicit values are red.
   5. Keep the badge decision in one validation flow and read/normalize saved records once; keep the expiration alarm synchronized with access-record writes.
+- Keep tag normalization/merging and Amazon tag URL parsing in `tag-utils.js`; do not recreate equivalent implementations in page scripts or the service worker.
+- Treat storage values, message payloads, and DOM lookups as potentially absent or malformed. Validate required page controls before registering handlers, guard selector results before use, and surface operation failures instead of relying on `TypeError` behavior.
 - Tag keys and descriptions are trimmed, and tag keys remain unique. `getTagFromAmazonUrl()` derives the key only from valid HTTP(S) URLs on supported domains with exactly one distinct non-empty `tag` value; reject ambiguous URLs. The options page shows keys as read-only, and editing a URL changes the derived key.
 - JSON export uses `{ "version": 1, "tags": [...] }` with `tag`, `description`, and `url`; the global access record is not exported. Imports also accept older arrays and records without URLs, ignore any imported `lastAccessed`, merge with stored tags, and remove duplicates.
 
@@ -53,7 +56,8 @@ This root-level file is the single source of repository instructions for all cod
 7. Avoid unnecessary dependencies. Prefer native Chrome and Node.js APIs already used by the project.
 8. Use the shared `isAmazonDomainUrl()` rule wherever supported Amazon URLs must be validated. It accepts `amazon.com`, subdomains ending in `.amazon.com`, and domain variants beginning with `amazon.com.`; do not use substring matching.
 9. Do not disguise errors with success-shaped values or silent failures; preserve localized UI error messages and useful service-worker logging.
-10. Do not include credentials, personal data, or secrets. Do not make destructive changes or discard pre-existing work.
+10. Update JSDoc when changing shared helpers or UI/service-worker behavior. Keep the documentation aligned with the actual DOM and event flows.
+11. Do not include credentials, personal data, or secrets. Do not make destructive changes or discard pre-existing work.
 
 ## Verification
 

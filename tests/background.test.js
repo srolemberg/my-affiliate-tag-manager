@@ -108,28 +108,35 @@ function createBackgroundHarness(initialStorage = {}) {
         'utf8',
     );
     vm.runInContext(
-        `${source}\nglobalThis.testApi = {mergeTagEntries, mutateStoredTags, getAmazonTags, getAmazonTagEntries, updateBadge};`,
+        `${source}\nglobalThis.testApi = {mutateStoredTags, getAmazonTagEntries, updateBadge};`,
         context,
     );
 
     return {api: context.testApi, storage, badgeCalls, chrome};
 }
 
-test('extracts unique tag values only from supported Amazon URLs', () => {
+test('discovers only one distinct tag from supported Amazon URLs', () => {
     const {api} = createBackgroundHarness();
 
     assert.deepEqual(
         JSON.parse(JSON.stringify(
-            api.getAmazonTags('https://www.amazon.com/dp/item?tag=one-20&tag=two-20&tag=one-20'),
+            api.getAmazonTagEntries(
+                'https://www.amazon.com/?tag=one-20&tag=one-20',
+            ),
         )),
-        ['one-20', 'two-20'],
+        [{
+            tag: 'one-20',
+            url: 'https://www.amazon.com/?tag=one-20&tag=one-20',
+        }],
     );
     assert.deepEqual(
-        JSON.parse(JSON.stringify(api.getAmazonTags('https://example.com/?tag=one-20'))),
+        JSON.parse(JSON.stringify(
+            api.getAmazonTagEntries('https://example.com/?tag=one-20'),
+        )),
         [],
     );
     assert.deepEqual(
-        JSON.parse(JSON.stringify(api.getAmazonTags('not a URL'))),
+        JSON.parse(JSON.stringify(api.getAmazonTagEntries('not a URL'))),
         [],
     );
     assert.deepEqual(

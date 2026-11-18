@@ -3,7 +3,11 @@
  */
 function localizeDocument() {
     document.querySelectorAll('[data-i18n]').forEach((element) => {
-        const message = chrome.i18n.getMessage(element.dataset.i18n);
+        const messageKey = element.dataset?.i18n;
+        if (!messageKey) {
+            return;
+        }
+        const message = chrome.i18n.getMessage(messageKey);
         if (message) {
             element.textContent = message;
         }
@@ -23,12 +27,25 @@ function localizeDocument() {
     ];
     for (const {selector, datasetKey, attribute} of localizedAttributes) {
         document.querySelectorAll(selector).forEach((element) => {
-            const message = chrome.i18n.getMessage(element.dataset[datasetKey]);
+            const messageKey = element.dataset?.[datasetKey];
+            if (!messageKey) {
+                return;
+            }
+            const message = chrome.i18n.getMessage(messageKey);
             if (message) {
                 element.setAttribute(attribute, message);
             }
         });
     }
+}
+
+/**
+ * Converts arbitrary thrown values into a safe string for localized errors.
+ * @param {unknown} error Value caught by a try/catch block.
+ * @returns {string} Readable error detail.
+ */
+function getErrorMessage(error) {
+    return error instanceof Error ? error.message : String(error);
 }
 
 localizeDocument();

@@ -16,7 +16,41 @@ const saveTagsButton = document.getElementById('save-tags-button');
 const exportButton = document.getElementById('export-button');
 const deleteAllButton = document.getElementById('delete-all-button');
 
+const optionsElements = {
+    'tag-list': tagList,
+    'add-form': addForm,
+    'new-description': newDescriptionInput,
+    'new-url': newUrlInput,
+    'new-tag-preview': newTagPreview,
+    'add-error': addError,
+    'add-button': addButton,
+    'import-file': importFileInput,
+    status: statusElement,
+    'save-tags-button': saveTagsButton,
+    'export-button': exportButton,
+    'delete-all-button': deleteAllButton,
+};
+const optionsReady = Object.values(optionsElements).every(Boolean);
 let savedTags = [];
+
+if (!optionsReady) {
+    const missingElements = Object.entries(optionsElements)
+        .filter(([, element]) => !element)
+        .map(([id]) => `#${id}`);
+    console.error(`Options page is missing required elements: ${missingElements.join(', ')}`);
+}
+
+/**
+ * Registers a page listener only after all required page controls are present.
+ * @param {Element|null} element Event target.
+ * @param {string} type Event name.
+ * @param {EventListener} listener Event handler.
+ */
+function listenOnOptionsPage(element, type, listener) {
+    if (optionsReady && element) {
+        element.addEventListener(type, listener);
+    }
+}
 
 /**
  * Sends a saved-tag operation to the service worker and refreshes the list.
@@ -122,7 +156,7 @@ function renderTags() {
                 statusElement.textContent = chrome.i18n.getMessage('tagDeleted');
             } catch (error) {
                 statusElement.textContent =
-                    chrome.i18n.getMessage('deleteTagError', error.message);
+                    chrome.i18n.getMessage('deleteTagError', getErrorMessage(error));
             }
         });
         actions.append(deleteButton);
@@ -138,7 +172,12 @@ function renderTags() {
     );
     tagList.querySelectorAll('.tag-url-input').forEach((input) => {
         input.addEventListener('input', () => {
-            const keyDisplay = input.closest('li').querySelector('.tag-key-display');
+            const keyDisplay = input.closest('li')?.querySelector('.tag-key-display');
+            if (!keyDisplay) {
+                console.error('Could not find the tag key display for an edited URL.');
+                updateSaveButtonState();
+                return;
+            }
             const tag = getTagFromAmazonUrl(input.value);
             keyDisplay.textContent = chrome.i18n.getMessage(
                 'currentKeyLabel',
@@ -159,19 +198,19 @@ function getPendingUpdates() {
         .map(
             /** Converts one list item into an update object. */
             (item) => {
-            const [descriptionInput, urlInput] = item.querySelectorAll('input');
-            if (!descriptionInput || !urlInput) {
-                return null;
-            }
+                const [descriptionInput, urlInput] = item.querySelectorAll('input');
+                if (!descriptionInput || !urlInput) {
+                    return null;
+                }
 
-            return {
-                oldTag: item.dataset.originalTag,
-                tag: getTagFromAmazonUrl(urlInput.value),
-                description: descriptionInput.value.trim(),
-                originalDescription: descriptionInput.dataset.originalDescription,
-                url: urlInput.value.trim(),
-                originalUrl: urlInput.dataset.originalUrl,
-            };
+                return {
+                    oldTag: item.dataset?.originalTag || '',
+                    tag: getTagFromAmazonUrl(urlInput.value),
+                    description: descriptionInput.value.trim(),
+                    originalDescription: descriptionInput.dataset.originalDescription,
+                    url: urlInput.value.trim(),
+                    originalUrl: urlInput.dataset.originalUrl,
+                };
             },
         )
         .filter(
@@ -201,7 +240,13 @@ function updateSaveButtonState() {
         const error = getTagUrlValidationMessage(errors[index]);
         const errorElement = input
             .closest('label')
-            .querySelector('.tag-url-error');
+            ?.querySelector('.tag-url-error');
+        if (!errorElement) {
+            console.error('Could not find the validation message for a tag URL.');
+            input.setAttribute('aria-invalid', 'true');
+            hasInvalidUpdate = true;
+            continue;
+        }
         errorElement.textContent = error;
         if (error) {
             input.setAttribute('aria-invalid', 'true');
@@ -242,13 +287,17 @@ function getAddFormUrlValidationError(url) {
  * @returns {Promise<void>}
  */
 async function loadTags() {
+    if (!optionsReady) {
+        return;
+    }
+
     try {
         const stored = await chrome.storage.local.get('savedTags');
         savedTags = normalizeTagEntries(stored.savedTags);
         renderTags();
     } catch (error) {
         statusElement.textContent =
-            chrome.i18n.getMessage('loadTagsError', error.message);
+            chrome.i18n.getMessage('loadTagsError', getErrorMessage(error));
     }
 }
 
@@ -261,7 +310,7 @@ function updateAddFormState() {
 }
 
 /** Validates the source URL and adds its derived key and optional description. */
-addForm.addEventListener('submit', async (event) => {
+listenOnOptionsPage(addForm, 'submit', async (event) => {
     event.preventDefault();
     const url = newUrlInput.value.trim();
     const tag = getTagFromAmazonUrl(url);
@@ -291,11 +340,11 @@ addForm.addEventListener('submit', async (event) => {
         statusElement.textContent = chrome.i18n.getMessage('tagAdded');
     } catch (error) {
         statusElement.textContent =
-            chrome.i18n.getMessage('addTagError', error.message);
+            chrome.i18n.getMessage('addTagError', getErrorMessage(error));
     }
 });
 
-newUrlInput.addEventListener('input', () => {
+listenOnOptionsPage(newUrlInput, 'input', () => {
     const tag = getTagFromAmazonUrl(newUrlInput.value);
     newTagPreview.textContent = tag
         ? chrome.i18n.getMessage('currentKeyLabel', tag)
@@ -304,7 +353,7 @@ newUrlInput.addEventListener('input', () => {
 });
 
 /** Sends all pending record edits as one service-worker operation. */
-saveTagsButton.addEventListener('click', async () => {
+listenOnOptionsPage(saveTagsButton, 'click', async () => {
     updateSaveButtonState();
     const updates = getPendingUpdates();
     if (saveTagsButton.disabled || updates.length === 0) {
@@ -316,12 +365,12 @@ saveTagsButton.addEventListener('click', async () => {
         statusElement.textContent = chrome.i18n.getMessage('changesSaved');
     } catch (error) {
         statusElement.textContent =
-            chrome.i18n.getMessage('saveChangesError', error.message);
+            chrome.i18n.getMessage('saveChangesError', getErrorMessage(error));
     }
 });
 
 /** Requires two confirmations before deleting every saved record. */
-deleteAllButton.addEventListener('click', async () => {
+listenOnOptionsPage(deleteAllButton, 'click', async () => {
     if (savedTags.length === 0) {
         return;
     }
@@ -339,12 +388,12 @@ deleteAllButton.addEventListener('click', async () => {
         statusElement.textContent = chrome.i18n.getMessage('allTagsDeleted');
     } catch (error) {
         statusElement.textContent =
-            chrome.i18n.getMessage('deleteAllError', error.message);
+            chrome.i18n.getMessage('deleteAllError', getErrorMessage(error));
     }
 });
 
 /** Exports saved records as a versioned JSON file. */
-exportButton.addEventListener('click', () => {
+listenOnOptionsPage(exportButton, 'click', () => {
     if (savedTags.length === 0) {
         return;
     }
@@ -370,7 +419,7 @@ exportButton.addEventListener('click', () => {
 });
 
 /** Validates a JSON file and merges its records with the saved list. */
-importFileInput.addEventListener('change', async () => {
+listenOnOptionsPage(importFileInput, 'change', async () => {
     const file = importFileInput.files?.[0];
     if (!file) {
         return;
@@ -431,7 +480,7 @@ importFileInput.addEventListener('change', async () => {
         });
         statusElement.textContent = chrome.i18n.getMessage('importedTags');
     } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
+        const message = getErrorMessage(error);
         statusElement.textContent =
             chrome.i18n.getMessage('importFileError', message);
     } finally {
@@ -441,7 +490,7 @@ importFileInput.addEventListener('change', async () => {
 
 /** Synchronizes the page when another extension component updates storage. */
 chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes.savedTags) {
+    if (optionsReady && areaName === 'local' && changes?.savedTags) {
         savedTags = normalizeTagEntries(changes.savedTags.newValue);
         updateAddFormState();
         if (getPendingUpdates().length === 0) {
@@ -452,4 +501,6 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
 });
 
-void loadTags();
+if (optionsReady) {
+    void loadTags();
+}
