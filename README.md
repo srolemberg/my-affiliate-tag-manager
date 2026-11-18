@@ -2,6 +2,10 @@
 
 A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on Amazon store domains listed in `amazon_store_domains.json` and their subdomains. Redirect, short-link, and non-store service domains in that file are not treated as stores. Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
 
+## Artificial intelligence disclaimer
+
+Artificial intelligence tools were used as supervised aids during development. Their suggestions were reviewed, directed, and validated by a human maintainer; they do not operate or make decisions independently for this project. AI-assisted code and documentation may still contain errors, so review and test changes before using or distributing the extension. Use of the extension and affiliate links is the user's responsibility and must comply with Amazon's terms and applicable laws.
+
 ## Installation
 
 1. Clone or download this project.
@@ -61,9 +65,9 @@ The interface and manifest strings use Chrome's localization system. The default
 
 To add another language, create a folder in `_locales` using the corresponding language code and add a `messages.json` file with the same message identifiers.
 
-## Artificial intelligence disclaimer
+## License
 
-This project was developed with the assistance of artificial intelligence tools. The code and documentation may contain inaccuracies; review and test changes before using or distributing the extension. Use of the extension and affiliate links is the user's responsibility and must comply with Amazon's terms and applicable laws.
+This project is distributed under the MIT License. See [LICENSE](LICENSE) for details.
 
 ## Permissions
 
