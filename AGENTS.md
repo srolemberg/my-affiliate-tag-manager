@@ -59,6 +59,7 @@ This root-level file is the single source of repository instructions for all cod
 9. Do not disguise errors with success-shaped values or silent failures; preserve localized UI error messages and useful service-worker logging.
 10. Update JSDoc when changing shared helpers or UI/service-worker behavior. Keep the documentation aligned with the actual DOM and event flows.
 11. Do not include credentials, personal data, or secrets. Do not make destructive changes or discard pre-existing work.
+12. During release or package preparation, do not include `screen001.png` or GIMP source files such as `store001.xcf` in the repository package or distribution.
 
 ## Verification
 

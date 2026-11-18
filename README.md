@@ -2,6 +2,8 @@
 
 A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on Amazon store domains listed in `amazon_store_domains.json` and their subdomains. Redirect, short-link, and non-store service domains in that file are not treated as stores. Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
 
+<img src="screen001.png" alt="My Affiliate Tags screenshot" width="25%">
+
 ## Artificial intelligence disclaimer
 
 Artificial intelligence tools were used as supervised aids during development. Their suggestions were reviewed, directed, and validated by a human maintainer; they do not operate or make decisions independently for this project. AI-assisted code and documentation may still contain errors, so review and test changes before using or distributing the extension. Use of the extension and affiliate links is the user's responsibility and must comply with Amazon's terms and applicable laws.
