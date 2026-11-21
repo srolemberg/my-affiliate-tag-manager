@@ -3,46 +3,47 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $manifestPath = Join-Path $projectRoot 'manifest.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+$packageDefinitionPath = Join-Path $PSScriptRoot 'extension-package.json'
+$packageDefinition = Get-Content -LiteralPath $packageDefinitionPath -Raw | ConvertFrom-Json
 $releaseDirectory = Join-Path $projectRoot 'release'
 $archivePath = Join-Path $releaseDirectory "my-affiliate-tag-manager-v$($manifest.version).zip"
 $stagingDirectory = Join-Path ([System.IO.Path]::GetTempPath()) "my-affiliate-tag-manager-$([guid]::NewGuid().ToString('N'))"
-$requiredFiles = @(
-    'manifest.json',
-    'background.js',
-    'popup.html',
-    'popup.js',
-    'options.html',
-    'options.js',
-    'footer.html',
-    'footer.js',
-    'i18n.js',
-    'tag-utils.js',
-    'tag-16.png',
-    'tag-32.png',
-    'tag-48.png',
-    'tag-128.png'
-)
 
-foreach ($file in $requiredFiles) {
+& node (Join-Path $PSScriptRoot 'validate-extension-package.js')
+if ($LASTEXITCODE -ne 0) {
+    throw 'Extension package validation failed. Update scripts/extension-package.json before packaging.'
+}
+
+foreach ($file in $packageDefinition.files) {
     $sourcePath = Join-Path $projectRoot $file
     if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
         throw "Required extension file is missing: $file"
     }
 }
 
-$localesPath = Join-Path $projectRoot '_locales'
-if (-not (Test-Path -LiteralPath $localesPath -PathType Container)) {
-    throw 'Required extension directory is missing: _locales'
+foreach ($directory in $packageDefinition.directories) {
+    $sourcePath = Join-Path $projectRoot $directory
+    if (-not (Test-Path -LiteralPath $sourcePath -PathType Container)) {
+        throw "Required extension directory is missing: $directory"
+    }
 }
 
 New-Item -ItemType Directory -Path $releaseDirectory -Force | Out-Null
 New-Item -ItemType Directory -Path $stagingDirectory | Out-Null
 
 try {
-    foreach ($file in $requiredFiles) {
-        Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $stagingDirectory
+    foreach ($file in $packageDefinition.files) {
+        $stagedPath = Join-Path $stagingDirectory $file
+        $stagedParent = Split-Path -Parent $stagedPath
+        New-Item -ItemType Directory -Path $stagedParent -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $projectRoot $file) -Destination $stagedPath
     }
-    Copy-Item -LiteralPath $localesPath -Destination $stagingDirectory -Recurse
+    foreach ($directory in $packageDefinition.directories) {
+        $stagedPath = Join-Path $stagingDirectory $directory
+        $stagedParent = Split-Path -Parent $stagedPath
+        New-Item -ItemType Directory -Path $stagedParent -Force | Out-Null
+        Copy-Item -LiteralPath (Join-Path $projectRoot $directory) -Destination $stagedPath -Recurse
+    }
 
     $workerPath = Join-Path $stagingDirectory 'background.js'
     $workerSource = Get-Content -LiteralPath $workerPath -Raw

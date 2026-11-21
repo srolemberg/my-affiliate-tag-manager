@@ -21,6 +21,7 @@ This root-level file is the single source of repository instructions for all cod
 - Run the Puppeteer extension smoke test: `npm run test:extension`
 - Create the release ZIP on Windows: `npm run package:extension`
 - Create the same release ZIP on POSIX systems with `sh`, `node`, and `zip`: `npm run package:extension:sh`
+- Validate the release allowlist against manifest/HTML dependencies: `npm run package:validate`
 - Run the utility tests: `node --test tests/tag-utils.test.js`
 - Run the service-worker tests: `node --test tests/background.test.js`
 - Run a named test: `node --test --test-name-pattern="test name"`
@@ -63,7 +64,8 @@ This root-level file is the single source of repository instructions for all cod
 10. Update JSDoc when changing shared helpers or UI/service-worker behavior. Keep the documentation aligned with the actual DOM and event flows.
 11. Do not include credentials, personal data, or secrets. Do not make destructive changes or discard pre-existing work.
 12. During release or package preparation, do not include `screen001.png` or GIMP source files such as `store001.xcf` in the repository package or distribution.
-13. Both extension packaging scripts use an explicit allowlist of runtime files, include `_locales/`, exclude tests/development files/source artwork, and inline `tag-utils.js` into the packaged `background.js` so the ZIP's service worker has no script-loading instruction. The archive path is `release/my-affiliate-tag-manager-v<manifest version>.zip`; keep the PowerShell and POSIX scripts behavior aligned.
+13. Both extension packaging scripts read the shared `scripts/extension-package.json` allowlist, include `_locales/`, exclude tests/development files/source artwork, and inline `tag-utils.js` into the packaged `background.js` so the ZIP's service worker has no script-loading instruction. The archive path is `release/my-affiliate-tag-manager-v<manifest version>.zip`; keep the PowerShell and POSIX scripts behavior aligned.
+14. Before generating any release version, inspect the current project changes and runtime file references from `manifest.json`, extension HTML, stylesheets, and packaging transforms. Update the shared allowlist, both packagers, validation logic, and tests for newly required/removed assets before running the packaging command. Never generate first and defer packaging-script updates; `npm run package:validate` must pass before producing the archive. The validator rejects missing or unrelated files, missing source resources, wildcard manifest resources that it cannot resolve, and non-local HTML script sources; update it explicitly if the project adopts a new resource-loading pattern.
 
 ## Verification
 

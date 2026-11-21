@@ -4,7 +4,8 @@
     "test": "node --test",
     "test:extension": "node --test tests/extension.test.js",
     "package:extension": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/package-extension.ps1",
-    "package:extension:sh": "sh scripts/package-extension.sh"
+    "package:extension:sh": "sh scripts/package-extension.sh",
+    "package:validate": "node scripts/validate-extension-package.js"
   },
   "devDependencies": {
     "@types/chrome": "^0.3.7",

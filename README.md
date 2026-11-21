@@ -18,7 +18,7 @@ Artificial intelligence tools were used as supervised aids during development. T
 
 To enable Chrome API definitions in your editor, run `npm install`. This step is optional for using the extension.
 
-To create a ZIP containing only the extension files needed for distribution, run `npm run package:extension` on Windows or `npm run package:extension:sh` where POSIX shell and `zip` are available. The archive is written to `release/my-affiliate-tag-manager-v<version>.zip`; it excludes tests, development dependencies, documentation, and source artwork. Both package scripts combine `tag-utils.js` into the service worker so the distributed worker has no script-loading instruction.
+To create a ZIP containing only the extension files needed for distribution, run `npm run package:extension` on Windows or `npm run package:extension:sh` where POSIX shell and `zip` are available. Both commands validate `scripts/extension-package.json` against local resources referenced by the manifest and extension HTML before writing the archive; run `npm run package:validate` to check this independently. Update the shared allowlist when adding runtime assets. The archive is written to `release/my-affiliate-tag-manager-v<version>.zip`; it excludes tests, development dependencies, documentation, and source artwork. Both package scripts combine `tag-utils.js` into the service worker so the distributed worker has no script-loading instruction.
 
 ## Tests
 
