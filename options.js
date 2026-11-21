@@ -288,7 +288,6 @@ async function loadTags() {
     }
 
     try {
-        await amazonStoreDomainsReady;
         const stored = await chrome.storage.local.get('savedTags');
         savedTags = normalizeTagEntries(stored.savedTags);
         renderTags();

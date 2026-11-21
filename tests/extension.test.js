@@ -76,6 +76,15 @@ test('loads the extension and exercises basic options and popup flows', {
         await popupPage.waitForFunction(
             () => document.querySelector('#saved-tag option[value="puppeteer-check-20"]'),
         );
+        const badgeLegendCodePoints = await popupPage.$$eval(
+            '.badge-legend-symbol',
+            (elements) => elements.map((element) => element.textContent.codePointAt(0)),
+        );
+        assert.deepEqual(
+            badgeLegendCodePoints,
+            [0x2713, 0x0021, 0x2717],
+            'popup legend must render the exact success, alert, and error code points',
+        );
         assert.equal(
             await popupPage.$eval(
                 '#saved-tag option[value="puppeteer-check-20"]',

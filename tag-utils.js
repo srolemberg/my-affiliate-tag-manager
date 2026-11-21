@@ -1,49 +1,30 @@
 /** Shared duration for inferred access status and its badge refresh alarm. */
 const TAG_ACCESS_VALIDITY_MS = 24 * 60 * 60 * 1000;
-const AMAZON_STORE_DOMAINS_FILE = 'amazon_store_domains.json';
-let amazonStoreDomains = new Set();
-
-/**
- * Loads official store domains from the bundled JSON file. Only `stores` are
- * used; redirects, short links, and unrelated Amazon services are excluded.
- * @returns {Promise<void>}
- */
-async function loadAmazonStoreDomains() {
-    const url = chrome.runtime.getURL(AMAZON_STORE_DOMAINS_FILE);
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Could not load ${AMAZON_STORE_DOMAINS_FILE}: ${response.status}`);
-    }
-
-    const data = await response.json();
-    if (!Array.isArray(data?.stores) || data.stores.length === 0) {
-        throw new Error(`${AMAZON_STORE_DOMAINS_FILE} has no store domain list.`);
-    }
-
-    const domains = new Set();
-    for (const store of data.stores) {
-        const domain = typeof store?.store_domain === 'string'
-            ? store.store_domain.trim().toLowerCase()
-            : '';
-        if (
-            !domain ||
-            domain.startsWith('.') ||
-            domain.endsWith('.') ||
-            domain.includes('..') ||
-            domain.includes('/') ||
-            domain.includes(':') ||
-            domain.includes('*')
-        ) {
-            throw new Error(`${AMAZON_STORE_DOMAINS_FILE} contains an invalid store domain.`);
-        }
-
-        domains.add(domain);
-    }
-
-    amazonStoreDomains = domains;
-}
-
-const amazonStoreDomainsReady = loadAmazonStoreDomains();
+const amazonStoreDomains = new Set([
+    'amazon.com.br',
+    'amazon.ca',
+    'amazon.com',
+    'amazon.com.mx',
+    'amazon.de',
+    'amazon.com.be',
+    'amazon.es',
+    'amazon.fr',
+    'amazon.ie',
+    'amazon.it',
+    'amazon.nl',
+    'amazon.pl',
+    'amazon.co.uk',
+    'amazon.se',
+    'amazon.com.tr',
+    'amazon.com.au',
+    'amazon.in',
+    'amazon.co.jp',
+    'amazon.sg',
+    'amazon.co.za',
+    'amazon.sa',
+    'amazon.eg',
+    'amazon.ae',
+]);
 
 /**
  * Normalizes legacy strings and record objects into unique tag records.

@@ -1,6 +1,6 @@
 # My Affiliate Tags
 
-A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on Amazon store domains listed in `amazon_store_domains.json` and their subdomains. Redirect, short-link, and non-store service domains in that file are not treated as stores. Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
+A Chrome extension for detecting, storing, and managing URLs with a `tag` parameter on supported Amazon store domains and their subdomains. Redirect, short-link, and non-store service domains are not treated as stores. Each saved tag stores its key, original URL, and optional description in the browser. The most recent tag access and its time are stored once as a separate global record.
 
 <img src="screen001.png" alt="My Affiliate Tags screenshot" width="25%">
 
@@ -18,6 +18,8 @@ Artificial intelligence tools were used as supervised aids during development. T
 
 To enable Chrome API definitions in your editor, run `npm install`. This step is optional for using the extension.
 
+To create a ZIP containing only the extension files needed for distribution, run `npm run package:extension` on Windows or `npm run package:extension:sh` where POSIX shell and `zip` are available. The archive is written to `release/my-affiliate-tag-manager-v<version>.zip`; it excludes tests, development dependencies, documentation, and source artwork. Both package scripts combine `tag-utils.js` into the service worker so the distributed worker has no script-loading instruction.
+
 ## Tests
 
 Run all tests with `npm test`. The unit tests use Node.js's built-in test runner; the Puppeteer smoke test also launches the bundled Chromium browser, loads the unpacked Manifest V3 extension, checks its service worker and manifest, and exercises invalid/valid tag entry and popup rendering. Run only the browser smoke test with `npm run test:extension`. Installing dependencies with `npm install` downloads Puppeteer's compatible browser if it is not already available.
@@ -26,7 +28,7 @@ Run all tests with `npm test`. The unit tests use Node.js's built-in test runner
 
 The popup is available on every page and displays the most recently accessed key and its date/time, a saved-tag selector, buttons to open the selected original URL in the current or a new tab, and a link to tag management. Opening a saved URL records that key and the access time. If there are no saved tags, the popup directs you to settings. Collapsed help sections explain how the extension works, the toolbar badge states, and privacy/data handling. The shared footer shows the extension version and links the author's name to the project source.
 
-The toolbar badge indicates URL/key status independently of the popup content: a green check means a valid saved URL's key matches the latest accessed key; a yellow exclamation mark means the valid saved URL has a different key or the key is inferred from a recent access on a supported Amazon URL without a `tag` parameter; and a red x means the URL has an invalid, unsaved, or expired inferred key. Inferred status expires after 24 hours, and an alarm refreshes the badge at that time. The badge is hidden on unsupported domains.
+The toolbar badge indicates URL/key status independently of the popup content: a green check (U+2713) means a valid saved URL's key matches the latest accessed key; an exclamation mark (U+0021) means the valid saved URL has a different key or the key is inferred from a recent access on a supported Amazon URL without a `tag` parameter; and a cross mark (U+2717) means the URL has an invalid, unsaved, or expired inferred key. Inferred status expires after 24 hours, and an alarm refreshes the badge at that time. The badge is hidden on unsupported domains.
 
 ## Tag management
 
@@ -86,6 +88,6 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) for de
 - `popup.html` / `popup.js`: interface for viewing last access and opening saved URLs.
 - `options.html` / `options.js`: interface for tag and URL maintenance plus JSON import/export.
 - `tag-utils.js`: shared tag normalization/merging, Amazon URL parsing, and URL/tag validation.
-- `amazon_store_domains.json`: source of supported Amazon store domains used by URL validation.
+- `amazon_store_domains.json`: domain catalog checked against the runtime allowlist by the unit tests; it is not loaded by the extension.
 - `i18n.js`: localizes marked page content and provides shared error formatting for UI scripts.
 - `_locales/`: localized strings for the supported languages.

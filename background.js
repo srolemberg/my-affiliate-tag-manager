@@ -20,7 +20,6 @@ function mutateStoredTags(operation) {
     const pendingMutation = tagMutationQueue.then(
         /** Waits for earlier writes before applying this operation. */
         async () => {
-            await amazonStoreDomainsReady;
             const stored = await chrome.storage.local.get([
                 TAG_STORAGE_KEY,
                 LAST_ACCESSED_STORAGE_KEY,
@@ -259,7 +258,6 @@ function getAmazonTagEntries(url) {
  * @returns {Promise<void>}
  */
 async function updateBadge(url) {
-    await amazonStoreDomainsReady;
     const stored = await chrome.storage.local.get([
         TAG_STORAGE_KEY,
         LAST_ACCESSED_STORAGE_KEY,
@@ -275,10 +273,10 @@ async function updateBadge(url) {
     }
 
     const badge = {
-        valid: {text: '✓', color: '#188038', title: 'badgeStatusValid'},
-        different: {text: '!', color: '#f9ab00', title: 'badgeStatusDifferentKey'},
-        expired: {text: 'x', color: '#d93025', title: 'badgeStatusExpired'},
-        invalid: {text: 'x', color: '#d93025', title: 'badgeStatusInvalid'},
+        valid: {text: '\u2713', color: '#188038', title: 'badgeStatusValid'},
+        different: {text: '\u0021', color: '#f9ab00', title: 'badgeStatusDifferentKey'},
+        expired: {text: '\u2717', color: '#d93025', title: 'badgeStatusExpired'},
+        invalid: {text: '\u2717', color: '#d93025', title: 'badgeStatusInvalid'},
     }[status];
     await Promise.all([
         chrome.action.setBadgeText({text: badge.text}),
@@ -346,7 +344,6 @@ async function restoreAccessExpiryAlarm() {
  * @returns {Promise<void>}
  */
 async function saveDiscoveredTags(url) {
-    await amazonStoreDomainsReady;
     const discoveredTags = getAmazonTagEntries(url);
     if (discoveredTags.length > 0) {
         try {

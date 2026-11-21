@@ -5,6 +5,31 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 
+const BADGE_EXPECTATIONS = {
+    valid: {codePoint: 0x2713, color: '#188038', title: 'badgeStatusValid'},
+    different: {
+        codePoint: 0x0021,
+        color: '#f9ab00',
+        title: 'badgeStatusDifferentKey',
+    },
+    expired: {codePoint: 0x2717, color: '#d93025', title: 'badgeStatusExpired'},
+    invalid: {codePoint: 0x2717, color: '#d93025', title: 'badgeStatusInvalid'},
+};
+
+function assertBadgeState(badgeCalls, state) {
+    const expected = BADGE_EXPECTATIONS[state];
+    const symbol = String.fromCodePoint(expected.codePoint);
+
+    assert.deepEqual(badgeCalls, [
+        {type: 'text', text: symbol},
+        {type: 'text-color', color: '#ffffff'},
+        {type: 'color', color: expected.color},
+        {type: 'title', title: expected.title},
+    ]);
+    assert.equal([...badgeCalls[0].text].length, 1, 'badge text must be one character');
+    assert.equal(badgeCalls[0].text.codePointAt(0), expected.codePoint);
+}
+
 /** Creates a minimal Chrome event mock that stores its registered listener. */
 function createEvent() {
     return {
@@ -22,7 +47,6 @@ function createEvent() {
 function createBackgroundHarness(initialStorage = {}) {
     const storage = {...initialStorage};
     const badgeCalls = [];
-    const storeDomains = require('../amazon_store_domains.json');
     const chrome = {
         action: {
             async setBadgeText(details) {
@@ -102,11 +126,6 @@ function createBackgroundHarness(initialStorage = {}) {
         chrome,
         console: {error() {}},
         URL,
-        fetch: async () => ({
-            ok: true,
-            status: 200,
-            json: async () => storeDomains,
-        }),
         importScripts(fileName) {
             const utilityPath = path.join(__dirname, '..', fileName);
             vm.runInContext(fs.readFileSync(utilityPath, 'utf8'), context);
@@ -117,7 +136,7 @@ function createBackgroundHarness(initialStorage = {}) {
         'utf8',
     );
     vm.runInContext(
-        `${source}\nglobalThis.testApi = {mutateStoredTags, getAmazonTagEntries, updateBadge, amazonStoreDomainsReady};`,
+        `${source}\nglobalThis.testApi = {mutateStoredTags, getAmazonTagEntries, updateBadge};`,
         context,
     );
 
@@ -126,7 +145,6 @@ function createBackgroundHarness(initialStorage = {}) {
 
 test('discovers only one distinct tag from supported Amazon URLs', async () => {
     const {api} = createBackgroundHarness();
-    await api.amazonStoreDomainsReady;
 
     assert.deepEqual(
         JSON.parse(JSON.stringify(
@@ -222,7 +240,6 @@ test('captures full URLs, preserves an existing URL, and updates last access tim
             lastAccessed: '',
         }],
     });
-    await api.amazonStoreDomainsReady;
     const visitedUrl = 'https://www.amazon.com/dp/another?tag=new-20';
 
     assert.deepEqual(
@@ -384,12 +401,7 @@ test('sets a green check for a valid saved affiliate URL', async () => {
     });
 
     await api.updateBadge('https://www.amazon.com/dp/item?tag=account-20');
-    assert.deepEqual(badgeCalls, [
-        {type: 'text', text: '✓'},
-        {type: 'text-color', color: '#ffffff'},
-        {type: 'color', color: '#188038'},
-        {type: 'title', title: 'badgeStatusValid'},
-    ]);
+    assertBadgeState(badgeCalls, 'valid');
 });
 
 test('shows yellow for a bare Amazon URL with a saved, unexpired last-access key', async () => {
@@ -406,9 +418,7 @@ test('shows yellow for a bare Amazon URL with a saved, unexpired last-access key
     });
 
     await api.updateBadge('https://www.amazon.com/');
-    assert.equal(badgeCalls[0].text, '!');
-    assert.equal(badgeCalls[2].color, '#f9ab00');
-    assert.equal(badgeCalls[3].title, 'badgeStatusDifferentKey');
+    assertBadgeState(badgeCalls, 'different');
 });
 
 test('shows yellow for a saved inferred key until its last-access time expires', async () => {
@@ -424,9 +434,7 @@ test('shows yellow for a saved inferred key until its last-access time expires',
     });
 
     await api.updateBadge('https://www.amazon.com/');
-    assert.equal(badgeCalls[0].text, '!');
-    assert.equal(badgeCalls[2].color, '#f9ab00');
-    assert.equal(badgeCalls[3].title, 'badgeStatusDifferentKey');
+    assertBadgeState(badgeCalls, 'different');
 });
 
 test('shows red for a saved inferred key after its last-access time expires', async () => {
@@ -442,9 +450,7 @@ test('shows red for a saved inferred key after its last-access time expires', as
     });
 
     await api.updateBadge('https://www.amazon.com/');
-    assert.equal(badgeCalls[0].text, 'x');
-    assert.equal(badgeCalls[2].color, '#d93025');
-    assert.equal(badgeCalls[3].title, 'badgeStatusExpired');
+    assertBadgeState(badgeCalls, 'expired');
 });
 
 test('sets a yellow exclamation mark when a valid saved key differs from the last accessed key', async () => {
@@ -460,9 +466,7 @@ test('sets a yellow exclamation mark when a valid saved key differs from the las
     });
 
     await api.updateBadge('https://www.amazon.com/?tag=second-20');
-    assert.equal(badgeCalls[0].text, '!');
-    assert.equal(badgeCalls[2].color, '#f9ab00');
-    assert.equal(badgeCalls[3].title, 'badgeStatusDifferentKey');
+    assertBadgeState(badgeCalls, 'different');
 });
 
 test('sets a red x for missing or unsaved tags', async () => {
@@ -474,18 +478,15 @@ test('sets a red x for missing or unsaved tags', async () => {
     });
 
     await api.updateBadge('https://www.amazon.com/');
-    assert.equal(badgeCalls[0].text, 'x');
-    assert.equal(badgeCalls[3].title, 'badgeStatusInvalid');
+    assertBadgeState(badgeCalls, 'invalid');
 
     badgeCalls.length = 0;
     await api.updateBadge('https://www.amazon.com/?tag=');
-    assert.equal(badgeCalls[0].text, 'x');
-    assert.equal(badgeCalls[3].title, 'badgeStatusInvalid');
+    assertBadgeState(badgeCalls, 'invalid');
 
     badgeCalls.length = 0;
     await api.updateBadge('https://www.amazon.com/?tag=unknown-20');
-    assert.equal(badgeCalls[0].text, 'x');
-    assert.equal(badgeCalls[3].title, 'badgeStatusInvalid');
+    assertBadgeState(badgeCalls, 'invalid');
 });
 
 test('hides the badge for unsupported domains', async () => {

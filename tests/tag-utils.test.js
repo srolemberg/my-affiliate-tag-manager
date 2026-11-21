@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const {before, test} = require('node:test');
+const {test} = require('node:test');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(
@@ -12,18 +12,8 @@ const source = fs.readFileSync(
 const storeDomains = require('../amazon_store_domains.json');
 const utilities = vm.createContext({
     URL,
-    chrome: {runtime: {getURL: (fileName) => fileName}},
-    fetch: async () => ({
-        ok: true,
-        status: 200,
-        json: async () => storeDomains,
-    }),
 });
 vm.runInContext(source, utilities);
-
-before(async () => {
-    await utilities.amazonStoreDomainsReady;
-});
 
 test('normalizes tag records and omits per-tag access timestamps', () => {
     const result = utilities.normalizeTagEntries([
@@ -165,6 +155,13 @@ test('derives one tag from a valid HTTP(S) URL and rejects ambiguous or invalid 
         'account-20',
     );
     assert.equal(
+        utilities.getTagFromAmazonUrl(
+            'https://www.amazon.com/?tag=account-20&tag=account-20',
+        ),
+        'account-20',
+        'repeated identical tag values remain unambiguous',
+    );
+    assert.equal(
         utilities.getTagFromAmazonUrl('http://www.amazon.com/?tag=account-20'),
         'account-20',
     );
@@ -184,6 +181,12 @@ test('derives one tag from a valid HTTP(S) URL and rejects ambiguous or invalid 
 });
 
 test('validates every store domain from JSON and rejects unlisted or spoofed domains', () => {
+    assert.deepEqual(
+        [...vm.runInContext('amazonStoreDomains', utilities)],
+        storeDomains.stores.map(({store_domain}) => store_domain),
+        'the static runtime allowlist must match the store-domain catalog',
+    );
+
     for (const {store_domain: domain} of storeDomains.stores) {
         assert.equal(
             utilities.getTagFromAmazonUrl(`https://www.${domain}/?tag=store-20`),
@@ -291,5 +294,67 @@ test('evaluates badge states for explicit and inferred saved keys', () => {
     assert.equal(
         utilities.getBadgeStatus(null, null, null, now),
         'hidden',
+    );
+});
+
+test('rejects ambiguous badge keys and expires inferred access at the exact boundary', () => {
+    const savedTags = [
+        {tag: 'active-20', url: 'https://www.amazon.com/?tag=active-20'},
+    ];
+    const recentAccess = {
+        tag: 'active-20',
+        lastAccessed: '2026-01-01T00:00:00.000Z',
+    };
+    const now = Date.parse('2026-01-02T00:00:00.000Z');
+
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/?tag=active-20&tag=active-20',
+            savedTags,
+            recentAccess,
+            now,
+        ),
+        'valid',
+    );
+    for (const url of [
+        'https://www.amazon.com/?tag=',
+        'https://www.amazon.com/?tag=unknown-20&tag=active-20',
+        'ftp://www.amazon.com/',
+    ]) {
+        assert.equal(
+            utilities.getBadgeStatus(url, savedTags, recentAccess, now),
+            'invalid',
+            `${url} must not use the recent access record as a fallback`,
+        );
+    }
+
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/',
+            savedTags,
+            recentAccess,
+            now,
+        ),
+        'expired',
+        'an inferred access expires at exactly 24 hours',
+    );
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/',
+            savedTags,
+            {...recentAccess, lastAccessed: 'not a timestamp'},
+            now,
+        ),
+        'expired',
+    );
+    assert.equal(
+        utilities.getBadgeStatus(
+            'https://www.amazon.com/',
+            [{tag: 'active-20', url: 'https://example.com/?tag=active-20'}],
+            recentAccess,
+            now - 60_000,
+        ),
+        'invalid',
+        'the inferred saved record must contain its matching valid Amazon URL',
     );
 });

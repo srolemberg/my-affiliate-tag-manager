@@ -10,7 +10,7 @@ This root-level file is the single source of repository instructions for all cod
 - `background.js` monitors tab activation and URL changes, records discovered tags, updates the action badge, and handles tag mutations.
 - `popup.html`/`popup.js` show the global last-access time and open a saved URL in the current or a new tab on every page.
 - `options.html`/`options.js` implement tag/URL management, batch edits, deletion, and JSON import/export.
-- `tag-utils.js` provides shared normalization, merging, Amazon URL parsing, and tag validation. It loads supported store domains from `amazon_store_domains.json` and is loaded using `importScripts()` in the service worker and script tags in both HTML pages.
+- `tag-utils.js` provides shared normalization, merging, Amazon URL parsing, and tag validation. Its static supported-store allowlist is checked against `amazon_store_domains.json` by unit tests; the source service worker loads it using `importScripts()`, and the popup/options pages load it using script tags.
 - `i18n.js` applies localized text and aria labels to marked HTML elements and formats thrown values for UI errors.
 - Messages are stored in `_locales/pt_BR/messages.json` and `_locales/en/messages.json`. The default language is set by `default_locale` in `manifest.json`.
 - Tests use Node.js's built-in test runner and are located in `tests/`.
@@ -19,6 +19,8 @@ This root-level file is the single source of repository instructions for all cod
 
 - Run all tests: `npm test`
 - Run the Puppeteer extension smoke test: `npm run test:extension`
+- Create the release ZIP on Windows: `npm run package:extension`
+- Create the same release ZIP on POSIX systems with `sh`, `node`, and `zip`: `npm run package:extension:sh`
 - Run the utility tests: `node --test tests/tag-utils.test.js`
 - Run the service-worker tests: `node --test tests/background.test.js`
 - Run a named test: `node --test --test-name-pattern="test name"`
@@ -41,9 +43,10 @@ This root-level file is the single source of repository instructions for all cod
   3. If there is no `tag` parameter, infer the key from `lastAccessedTag` only for a supported HTTP(S) URL. The inferred key must match a saved record whose original URL validates for that key.
   4. For an explicit saved key, show green when it matches `lastAccessedTag.tag`, otherwise yellow. For an inferred saved key, show yellow while its valid `lastAccessed` timestamp is less than 24 hours old, otherwise red. Missing/invalid saved records and invalid explicit values are red.
   5. Keep the badge decision in one validation flow and read/normalize saved records once; keep the expiration alarm synchronized with access-record writes.
+  6. Preserve the badge symbols as exactly one Unicode code point: success U+2713, alert U+0021, and error U+2717. Unit tests must validate the exact code points emitted by the service worker and rendered by the popup legend.
 - Keep tag normalization/merging and Amazon tag URL parsing in `tag-utils.js`; do not recreate equivalent implementations in page scripts or the service worker.
 - Treat storage values, message payloads, and DOM lookups as potentially absent or malformed. Validate required page controls before registering handlers, guard selector results before use, and surface operation failures instead of relying on `TypeError` behavior.
-- Tag keys and descriptions are trimmed, and tag keys remain unique. `getTagFromAmazonUrl()` derives the key only from valid HTTP(S) URLs on domains listed under `stores` in `amazon_store_domains.json` (or their subdomains), with exactly one distinct non-empty `tag` value; reject ambiguous URLs. Do not treat `additional_domains` as store domains. The options page shows keys as read-only, and editing a URL changes the derived key.
+- Tag keys and descriptions are trimmed, and tag keys remain unique. `getTagFromAmazonUrl()` derives the key only from valid HTTP(S) URLs on the static supported-store allowlist in `tag-utils.js` (or their subdomains), with exactly one distinct non-empty `tag` value; reject ambiguous URLs. Keep this allowlist synchronized with `amazon_store_domains.json`'s `stores` array; unit tests verify the match. Do not treat `additional_domains` as store domains. The options page shows keys as read-only, and editing a URL changes the derived key.
 - JSON export uses `{ "version": 1, "tags": [...] }` with `tag`, `description`, and `url`; the global access record is not exported. Imports also accept older arrays and records without URLs, ignore any imported `lastAccessed`, merge with stored tags, and remove duplicates.
 
 ## Maintenance guidelines
@@ -55,11 +58,12 @@ This root-level file is the single source of repository instructions for all cod
 5. When changing logic, add or update tests in `tests/`. Cover valid results, invalid input, and relevant failures.
 6. Update `README.md` when changing installation, behavior, permissions, tests, import/export, or localization.
 7. Avoid unnecessary dependencies. Prefer native Chrome and Node.js APIs already used by the project.
-8. Use the shared `getTagFromAmazonUrl()` and `isValidAmazonTagUrl()` helpers wherever supported Amazon tag URLs must be validated. Their domain source is `amazon_store_domains.json`'s `stores` array, with subdomains allowed at label boundaries. Do not accept arbitrary hostnames merely because they contain or start with an Amazon domain.
+8. Use the shared `getTagFromAmazonUrl()` and `isValidAmazonTagUrl()` helpers wherever supported Amazon tag URLs must be validated. Their domain source is the static allowlist in `tag-utils.js`, synchronized with `amazon_store_domains.json`'s `stores` array, with subdomains allowed at label boundaries. Do not accept arbitrary hostnames merely because they contain or start with an Amazon domain.
 9. Do not disguise errors with success-shaped values or silent failures; preserve localized UI error messages and useful service-worker logging.
 10. Update JSDoc when changing shared helpers or UI/service-worker behavior. Keep the documentation aligned with the actual DOM and event flows.
 11. Do not include credentials, personal data, or secrets. Do not make destructive changes or discard pre-existing work.
 12. During release or package preparation, do not include `screen001.png` or GIMP source files such as `store001.xcf` in the repository package or distribution.
+13. Both extension packaging scripts use an explicit allowlist of runtime files, include `_locales/`, exclude tests/development files/source artwork, and inline `tag-utils.js` into the packaged `background.js` so the ZIP's service worker has no script-loading instruction. The archive path is `release/my-affiliate-tag-manager-v<manifest version>.zip`; keep the PowerShell and POSIX scripts behavior aligned.
 
 ## Verification
 
