@@ -4,6 +4,8 @@ A Chrome extension for detecting, storing, and managing URLs with a `tag` parame
 
 <img src="screen001.png" alt="My Affiliate Tags screenshot" width="25%">
 
+[![Build Status](https://app.bitrise.io/app/35cf5bfe-5d59-4501-805e-d2d856004412/status.svg?token=D2m8-phiBGsoiNh2zk2V7Q&branch=main)](https://app.bitrise.io/app/35cf5bfe-5d59-4501-805e-d2d856004412)
+
 ## Artificial intelligence disclaimer
 
 Artificial intelligence tools were used as supervised aids during development. Their suggestions were reviewed, directed, and validated by a human maintainer; they do not operate or make decisions independently for this project. AI-assisted code and documentation may still contain errors, so review and test changes before using or distributing the extension. Use of the extension and affiliate links is the user's responsibility and must comply with Amazon's terms and applicable laws.
@@ -69,10 +71,6 @@ The interface and manifest strings use Chrome's localization system. The default
 
 To add another language, create a folder in `_locales` using the corresponding language code and add a `messages.json` file with the same message identifiers.
 
-## License
-
-This project is distributed under the MIT License. See [LICENSE](LICENSE) for details.
-
 ## Permissions
 
 - `activeTab`: accesses the active tab when the user interacts with the extension.
@@ -91,3 +89,11 @@ This project is distributed under the MIT License. See [LICENSE](LICENSE) for de
 - `amazon_store_domains.json`: domain catalog checked against the runtime allowlist by the unit tests; it is not loaded by the extension.
 - `i18n.js`: localizes marked page content and provides shared error formatting for UI scripts.
 - `_locales/`: localized strings for the supported languages.
+
+## License
+
+This project is distributed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Contributing
+
+See [CONTRIBUTING](CONTRIBUTING.md) for details.
