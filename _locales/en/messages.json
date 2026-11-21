@@ -3,7 +3,7 @@
     "message": "My Affiliate Tags"
   },
   "appDescription": {
-    "message": "An extension for managing affiliate tags."
+    "message": "Detects, saves, and manages Amazon affiliate tags and URLs in this browser."
   },
   "checkingTag": {
     "message": "Checking tag..."
@@ -331,6 +331,9 @@
   },
   "privacyHeading": {
     "message": "Privacy and data"
+  },
+  "privacyPolicyLink": {
+    "message": "Read the privacy policy"
   },
   "howItWorksDisclaimer": {
     "message": "Amazon manages the session. Therefore, the extension cannot guarantee that a change will take effect immediately or confirm the session status."

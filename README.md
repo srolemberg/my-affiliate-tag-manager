@@ -73,11 +73,14 @@ To add another language, create a folder in `_locales` using the corresponding l
 
 ## Permissions
 
-- `activeTab`: accesses the active tab when the user interacts with the extension.
 - `tabs`: reads the tab URL and tracks navigation and tab changes.
 - `storage`: stores tags locally in the browser.
 - `webNavigation`: detects successfully completed main-frame navigations so access timestamps are not changed by tab focus alone.
 - `alarms`: refreshes the badge when the inferred key's 24-hour access window expires.
+
+## Privacy
+
+Data handling and the browser storage used by the extension are documented in the [privacy policy](https://gist.githubusercontent.com/srolemberg/3c63430f265ed88fd8774c147da845ba/raw/cf3e2fd92779a8e687a3849d79a4d2f14349468b/gistfile1.txt). The local [PRIVACY.md](PRIVACY.md) summarizes the same data practices.
 
 ## Main files
 

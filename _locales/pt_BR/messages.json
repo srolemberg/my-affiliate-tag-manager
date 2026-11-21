@@ -3,7 +3,7 @@
     "message": "Minhas Tags de Afiliado"
   },
   "appDescription": {
-    "message": "Uma extensão para gerenciar tags de afiliados."
+    "message": "Detecta, salva e gerencia tags de afiliados e URLs da Amazon neste navegador."
   },
   "checkingTag": {
     "message": "Verificando tag..."
@@ -331,6 +331,9 @@
   },
   "privacyHeading": {
     "message": "Privacidade e dados"
+  },
+  "privacyPolicyLink": {
+    "message": "Ler a política de privacidade"
   },
   "howItWorksDisclaimer": {
     "message": "A sessão é gerenciada pela Amazon. Por isso, a extensão não pode garantir que uma alteração tenha efeito imediato nem confirmar o estado da sessão."

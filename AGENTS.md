@@ -15,6 +15,12 @@ This root-level file is the single source of repository instructions for all cod
 - Messages are stored in `_locales/pt_BR/messages.json` and `_locales/en/messages.json`. The default language is set by `default_locale` in `manifest.json`.
 - Tests use Node.js's built-in test runner and are located in `tests/`.
 
+## Policy compliance reference
+
+- Consult `troubleshooting.md` before changing permissions, user-data handling, metadata, manifest resources, affiliate functionality, or privacy disclosures.
+- Use that document to identify relevant rejection categories and verify the corresponding implementation and in-product disclosure.
+- Keep the project changes consistent with the narrowest required permissions and the documented local-only data flow.
+
 ## Commands
 
 - Run all tests: `npm test`
