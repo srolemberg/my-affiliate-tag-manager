@@ -6,6 +6,8 @@ A Chrome extension for detecting, storing, and managing URLs with a `tag` parame
 
 [![Build Status](https://app.bitrise.io/app/35cf5bfe-5d59-4501-805e-d2d856004412/status.svg?token=D2m8-phiBGsoiNh2zk2V7Q&branch=main)](https://app.bitrise.io/app/35cf5bfe-5d59-4501-805e-d2d856004412)
 
+[on Chrome Web Store](https://chromewebstore.google.com/detail/khffmniafjplifpandmgibpkkfbbbnom?utm_source=item-share-cb)
+
 ## Artificial intelligence disclaimer
 
 Artificial intelligence tools were used as supervised aids during development. Their suggestions were reviewed, directed, and validated by a human maintainer; they do not operate or make decisions independently for this project. AI-assisted code and documentation may still contain errors, so review and test changes before using or distributing the extension. Use of the extension and affiliate links is the user's responsibility and must comply with Amazon's terms and applicable laws.
