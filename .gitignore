@@ -34,6 +34,20 @@ pnpm-debug.log*
 .eslintcache
 *.tsbuildinfo
 
+# Configurações locais de ferramentas de IA (AGENTS.md é a referência do projeto)
+.claude/
+.cursor/
+.windsurf/
+.gemini/
+.codex/
+.aider/
+.continue/
+.opencode/
+.github/agents/
+.github/instructions/
+.github/prompts/
+.github/copilot-instructions.md
+
 # Arquivos de Sistema Operacional
 .DS_Store
 Thumbs.db
