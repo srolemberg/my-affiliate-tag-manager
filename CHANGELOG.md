@@ -5,11 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.1] - 2026-11-24
+
+### Added
+
+- Automated extension ZIP packaging for Windows and POSIX, driven by a shared
+  runtime-file allowlist.
+- Package validation for manifest and HTML resources, with regression tests.
+- Contributor guidance and a local privacy summary.
 
 ### Changed
 
-- Added a changelog for documenting future releases.
+- Refined Amazon tag URL validation and expanded service-worker and utility test
+  coverage.
+- Reviewed extension permissions and removed the unnecessary `activeTab`
+  permission.
+- Updated privacy disclosures and project documentation.
 
 ## [0.1.0] - 2026-11-17
 
