@@ -55,6 +55,13 @@ test('loads the extension and exercises basic options and popup flows', {
             'loads the local Material 3 surface styles',
         );
         assert.equal(
+            await optionsPage.evaluate(
+                () => getComputedStyle(document.querySelector('#add-button'), '::before').transitionDuration,
+            ),
+            '0.15s',
+            'loads Material 3 button state-layer transitions',
+        );
+        assert.equal(
             await optionsPage.$eval('#add-button', (button) => button.disabled),
             true,
         );
@@ -124,7 +131,32 @@ test('loads the extension and exercises basic options and popup flows', {
             'Selecione uma tag',
             'shows the default selection prompt on the button',
         );
+        assert.equal(
+            await popupPage.$eval('#saved-tag-button', (button) => button.title),
+            'Selecione uma tag',
+            'provides a tooltip for the saved-tag picker',
+        );
+        assert.deepEqual(
+            await popupPage.$$eval(
+                '.open-buttons button',
+                (buttons) => buttons.map((button) => button.title),
+            ),
+            ['Abrir na aba atual', 'Abrir em nova aba'],
+            'provides a tooltip for each URL-opening button',
+        );
+        const tagButtonWidth = await popupPage.$eval(
+            '#saved-tag-button',
+            (button) => button.getBoundingClientRect().width,
+        );
         await popupPage.click('#saved-tag-button');
+        await popupPage.waitForSelector('#saved-tag-button > .md-ripple');
+        assert.equal(
+            await popupPage.$eval('#saved-tag-button', (button) => (
+                button.getBoundingClientRect().width
+            )),
+            tagButtonWidth,
+            'keeps the tag button width fixed while its ripple is active',
+        );
         assert.equal(
             await popupPage.$eval('#saved-tag-menu', (menu) => menu.hidden),
             false,
@@ -138,6 +170,14 @@ test('loads the extension and exercises basic options and popup flows', {
             'Puppeteer smoke test',
             'shows the same saved-tag label as the former dropdown',
         );
+        assert.equal(
+            await popupPage.$eval(
+                '#saved-tag-menu [data-tag="puppeteer-check-20"]',
+                (option) => option.title,
+            ),
+            'Puppeteer smoke test',
+            'provides a tooltip for each saved-tag menu item',
+        );
         await popupPage.click('#saved-tag-menu [data-tag="puppeteer-check-20"]');
         assert.equal(
             await popupPage.$eval(
@@ -146,6 +186,11 @@ test('loads the extension and exercises basic options and popup flows', {
             ),
             'Puppeteer smoke test',
             'updates the button label with the selected tag label',
+        );
+        assert.equal(
+            await popupPage.$eval('#saved-tag-button', (button) => button.title),
+            'Puppeteer smoke test',
+            'updates the picker tooltip to match the selected tag',
         );
         assert.equal(
             await popupPage.$eval('#saved-tag-menu', (menu) => menu.hidden),
@@ -172,6 +217,50 @@ test('loads the extension and exercises basic options and popup flows', {
             ],
             'renders both tab-opening actions as medium round text-only buttons',
         );
+        await popupPage.evaluate(() => {
+            const button = document.createElement('button');
+            button.id = 'interaction-test-button';
+            button.textContent = 'Interaction test';
+            button.style.position = 'fixed';
+            button.style.left = '0';
+            button.style.top = '0';
+            document.body.append(button);
+        });
+        await popupPage.hover('#interaction-test-button');
+        await popupPage.waitForFunction(
+            () => getComputedStyle(
+                document.querySelector('#interaction-test-button'),
+                '::before',
+            ).opacity === '0.08',
+        );
+        assert.equal(
+            await popupPage.$eval(
+                '#interaction-test-button',
+                (button) => getComputedStyle(button, '::before').opacity,
+            ),
+            '0.08',
+            'shows the Material 3 hover state layer',
+        );
+        const supportsReducedMotion = await popupPage.evaluate(
+            () => matchMedia('(prefers-reduced-motion: reduce)').matches,
+        );
+        await popupPage.mouse.down();
+        if (!supportsReducedMotion) {
+            await popupPage.waitForSelector(
+                '#interaction-test-button > .md-ripple',
+            );
+        }
+        await popupPage.mouse.up();
+        if (!supportsReducedMotion) {
+            await popupPage.waitForFunction(
+                () => !document.querySelector('#interaction-test-button > .md-ripple'),
+                {timeout: 2000},
+            );
+        }
+        await popupPage.evaluate(() => {
+            const button = document.getElementById('interaction-test-button');
+            button.remove();
+        });
         assert.equal(
             await popupPage.$eval('.last-access-card', (card) => (
                 getComputedStyle(card).height
@@ -214,6 +303,14 @@ test('loads the extension and exercises basic options and popup flows', {
             'renders the app title in the app bar',
         );
         assert.equal(await popupPage.$('#open-settings-button') !== null, true);
+        assert.equal(
+            await popupPage.$eval(
+                '#open-settings-button',
+                (button) => button.title,
+            ),
+            'Configurações',
+            'provides the localized settings tooltip',
+        );
         assert.equal(await popupPage.$('#manage-tags-link'), null);
         assert.equal(
             await popupPage.$$eval('body > h1', (headings) => headings.length),

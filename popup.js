@@ -118,6 +118,7 @@ async function loadPopup() {
             option.setAttribute('role', 'option');
             option.setAttribute('aria-selected', 'false');
             option.textContent = entry.description || entry.tag;
+            option.title = option.textContent;
             option.disabled = !isValidAmazonTagUrl(entry.url, entry.tag);
             tagMenu.append(option);
         }
@@ -145,6 +146,7 @@ function selectSavedTag(tag) {
 
     selectedTag = selected.tag;
     tagButtonLabel.textContent = selected.description || selected.tag;
+    tagButton.title = tagButtonLabel.textContent;
     for (const option of tagMenu.querySelectorAll('[role="option"]')) {
         option.setAttribute(
             'aria-selected',

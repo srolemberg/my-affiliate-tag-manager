@@ -17,6 +17,9 @@
   "manageTagsLink": {
     "message": "Open settings and manage tags"
   },
+  "settingsTooltip": {
+    "message": "Settings"
+  },
   "openSettingsError": {
     "message": "Could not open settings."
   },

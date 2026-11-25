@@ -137,7 +137,7 @@
         }
 
         #saved-tag-button svg,
-        #saved-tag-button span {
+        #saved-tag-button span:not(.md-ripple) {
             position: relative;
             z-index: 1;
         }
@@ -188,7 +188,6 @@
             width: 100%;
         }
 
-        .saved-tag-option:hover,
         .saved-tag-option[aria-selected="true"] {
             background: var(--md-sys-color-surface-container-high);
         }
@@ -294,7 +293,7 @@
 <body>
 <header class="popup-app-bar">
     <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
-    <button id="open-settings-button" type="button" data-i18n-aria-label="manageTagsLink" aria-label="Abrir configurações e gerenciar tags">
+    <button id="open-settings-button" type="button" data-i18n-title="settingsTooltip" title="Configurações" data-i18n-aria-label="manageTagsLink" aria-label="Abrir configurações e gerenciar tags">
         <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54A.49.49 0 0 0 13.88 2h-3.76a.49.49 0 0 0-.49.42L9.27 4.96c-.59.23-1.14.55-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.72 8.48a.5.5 0 0 0 .12.64l2.03 1.58a6.48 6.48 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.21.37.3.61.22l2.39-.96c.49.39 1.04.71 1.63.94l.36 2.54c.04.24.24.42.49.42h3.76c.25 0 .45-.18.49-.42l.36-2.54c.59-.23 1.14-.55 1.63-.94l2.39.96c.24.09.49 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.02-1.58ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/>
         </svg>
@@ -309,7 +308,7 @@
 </article>
 <section id="amazon-content">
     <div class="tag-picker">
-        <button id="saved-tag-button" type="button" data-i18n-aria-label="selectTag" aria-label="Selecione uma tag" aria-haspopup="listbox" aria-expanded="false" aria-controls="saved-tag-menu">
+        <button id="saved-tag-button" type="button" data-i18n-title="selectTag" title="Selecione uma tag" data-i18n-aria-label="selectTag" aria-label="Selecione uma tag" aria-haspopup="listbox" aria-expanded="false" aria-controls="saved-tag-menu">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M21.41 11.58l-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.05-.59-1.42ZM13 20l-9-9V4h7l9 9-7 7ZM6.5 10A1.5 1.5 0 1 0 6.5 7a1.5 1.5 0 0 0 0 3Z"/>
                 </svg>
@@ -318,8 +317,8 @@
         <div id="saved-tag-menu" role="listbox" aria-labelledby="saved-tag-button" hidden></div>
     </div>
     <div class="open-buttons">
-        <button id="open-current-tab-button" type="button" disabled data-i18n="openCurrentTabButton">Abrir na aba atual</button>
-        <button id="open-new-tab-button" type="button" disabled data-i18n="openNewTabButton">Abrir em nova aba</button>
+        <button id="open-current-tab-button" type="button" disabled data-i18n="openCurrentTabButton" data-i18n-title="openCurrentTabButton" title="Abrir na aba atual">Abrir na aba atual</button>
+        <button id="open-new-tab-button" type="button" disabled data-i18n="openNewTabButton" data-i18n-title="openNewTabButton" title="Abrir em nova aba">Abrir em nova aba</button>
     </div>
     <p id="status" role="status" aria-live="polite"></p>
 </section>
@@ -348,6 +347,7 @@
 <script src="i18n.js"></script>
 <script src="tag-utils.js"></script>
 <script src="M3/js/theme.js"></script>
+<script src="M3/js/interactions.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>
