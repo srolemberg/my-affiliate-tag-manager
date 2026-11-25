@@ -115,6 +115,10 @@
             gap: 8px;
         }
 
+        #status:empty {
+            display: none;
+        }
+
         .tag-picker {
             position: relative;
         }
@@ -217,20 +221,97 @@
             width: auto;
         }
 
-        details {
-            display: grid;
-            gap: 8px;
+        .m3-accordion {
+            border: 0;
         }
 
-        details.how-it-works {
+        .m3-accordion-list {
+            display: grid;
             gap: 0;
         }
 
-        details.how-it-works summary {
-            margin-bottom: 8px;
+        .m3-list-item {
+            align-items: center;
+            color: var(--md-sys-color-on-surface);
+            cursor: pointer;
+            display: flex;
+            gap: 16px;
+            list-style: none;
+            min-height: 56px;
+            overflow: hidden;
+            padding: 0 16px;
+            position: relative;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        details.how-it-works p + p {
+        .m3-list-item::-webkit-details-marker {
+            display: none;
+        }
+
+        .m3-list-item::before {
+            background: currentColor;
+            content: "";
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            transition: opacity 150ms ease;
+        }
+
+        .m3-list-item:hover::before {
+            opacity: 0.08;
+        }
+
+        .m3-list-item:active::before {
+            opacity: 0.12;
+            transition-duration: 0ms;
+        }
+
+        .m3-list-item:focus-visible {
+            outline: 2px solid var(--md-sys-color-primary);
+            outline-offset: -2px;
+        }
+
+        .m3-list-item-icon {
+            fill: var(--md-sys-color-on-surface-variant);
+            flex: 0 0 24px;
+            height: 24px;
+            position: relative;
+            width: 24px;
+        }
+
+        .m3-list-item-label {
+            flex: 1;
+            font-size: 16px;
+            position: relative;
+        }
+
+        .m3-list-item-chevron {
+            fill: var(--md-sys-color-on-surface-variant);
+            flex: 0 0 24px;
+            height: 24px;
+            position: relative;
+            transform: rotate(0);
+            transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+            width: 24px;
+        }
+
+        .m3-accordion[open] .m3-list-item-chevron {
+            transform: rotate(180deg);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .m3-list-item::before,
+            .m3-list-item-chevron {
+                transition-duration: 0.01ms;
+            }
+        }
+
+        .m3-accordion-content {
+            padding: 0 16px 16px 56px;
+        }
+
+        .m3-accordion-content p + p {
             margin-top: 8px;
         }
 
@@ -242,7 +323,12 @@
             background: var(--md-sys-color-outline-variant);
             border: 0;
             height: 2px;
+            margin: 0;
             width: 100%;
+        }
+
+        body:has(#status:empty) > .m3-divider {
+            margin-top: 8px;
         }
 
         #detected-tag {
@@ -323,26 +409,46 @@
     <p id="status" role="status" aria-live="polite"></p>
 </section>
 <hr class="m3-divider">
-<details class="how-it-works">
-    <summary data-i18n="howItWorksHeading">Como funciona</summary>
-    <p data-i18n="howItWorksCapture">Ao visitar uma página cuja URL contém uma chave de afiliado, a extensão identifica e armazena essa URL em uma lista interna. Assim, você pode acessá-la rapidamente sem precisar procurá-la novamente.</p>
-    <p data-i18n="howItWorksExpiry">A extensão também acompanha a janela de 24 horas associada à chave, para informar quando esse período pode ter terminado. Esse indicador não confirma a expiração da sessão da Amazon nem significa necessariamente que seja preciso renovar credenciais.</p>
-    <p data-i18n="howItWorksOpen">Use a lista para abrir uma URL salva. A tag de afiliado não precisa permanecer visível na barra de endereços durante a navegação: a Amazon pode armazená-la em um cookie que rastreia compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL.</p>
-    <p class="disclaimer" data-i18n="howItWorksDisclaimer">A sessão é gerenciada pela Amazon. Por isso, a extensão não pode garantir que uma alteração tenha efeito imediato nem confirmar o estado da sessão.</p>
+<div class="m3-accordion-list">
+<details class="m3-accordion" name="popup-accordions">
+    <summary class="m3-list-item">
+        <svg class="m3-list-item-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4Zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4Z"/></svg>
+        <span class="m3-list-item-label" data-i18n="howItWorksHeading">Como funciona</span>
+        <svg class="m3-list-item-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+    </summary>
+    <div class="m3-accordion-content">
+        <p data-i18n="howItWorksCapture">Ao visitar uma página cuja URL contém uma chave de afiliado, a extensão identifica e armazena essa URL em uma lista interna. Assim, você pode acessá-la rapidamente sem precisar procurá-la novamente.</p>
+        <p data-i18n="howItWorksExpiry">A extensão também acompanha a janela de 24 horas associada à chave, para informar quando esse período pode ter terminado. Esse indicador não confirma a expiração da sessão da Amazon nem significa necessariamente que seja preciso renovar credenciais.</p>
+        <p data-i18n="howItWorksOpen">Use a lista para abrir uma URL salva. A tag de afiliado não precisa permanecer visível na barra de endereços durante a navegação: a Amazon pode armazená-la em um cookie que rastreia compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL.</p>
+        <p class="disclaimer" data-i18n="howItWorksDisclaimer">A sessão é gerenciada pela Amazon. Por isso, a extensão não pode garantir que uma alteração tenha efeito imediato nem confirmar o estado da sessão.</p>
+    </div>
 </details>
-<details>
-    <summary data-i18n="badgeLegendTitle">O que significa a badge</summary>
-    <ul class="badge-legend">
-        <li><span class="badge-legend-symbol badge-legend-valid">&#x2713;</span> <span data-i18n="badgeLegendValid">A URL contém uma chave salva igual à última acessada.</span></li>
-        <li><span class="badge-legend-symbol badge-legend-different">&#x0021;</span> <span data-i18n="badgeLegendDifferent">A chave salva é diferente da última acessada, ou a URL não mostra a chave e o último acesso ainda é recente.</span></li>
-        <li><span class="badge-legend-symbol badge-legend-invalid">&#x2717;</span> <span data-i18n="badgeLegendInvalid">A chave da URL não está salva, é inválida ou o último acesso inferido expirou (24 horas).</span></li>
-    </ul>
+<details class="m3-accordion" name="popup-accordions">
+    <summary class="m3-list-item">
+        <svg class="m3-list-item-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 3 6v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V6l-9-4Zm0 19.93c-4.03-1.22-7-5.54-7-9.93V7.3l7-3.11 7 3.11V12c0 4.39-2.97 8.71-7 9.93ZM11 7h2v6h-2zm0 8h2v2h-2z"/></svg>
+        <span class="m3-list-item-label" data-i18n="badgeLegendTitle">O que significa a badge</span>
+        <svg class="m3-list-item-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+    </summary>
+    <div class="m3-accordion-content">
+        <ul class="badge-legend">
+            <li><span class="badge-legend-symbol badge-legend-valid">&#x2713;</span> <span data-i18n="badgeLegendValid">A URL contém uma chave salva igual à última acessada.</span></li>
+            <li><span class="badge-legend-symbol badge-legend-different">&#x0021;</span> <span data-i18n="badgeLegendDifferent">A chave salva é diferente da última acessada, ou a URL não mostra a chave e o último acesso ainda é recente.</span></li>
+            <li><span class="badge-legend-symbol badge-legend-invalid">&#x2717;</span> <span data-i18n="badgeLegendInvalid">A chave da URL não está salva, é inválida ou o último acesso inferido expirou (24 horas).</span></li>
+        </ul>
+    </div>
 </details>
-<details>
-    <summary data-i18n="privacyHeading">Privacidade e dados</summary>
-    <p data-i18n="howItWorksPrivacy">A extensão não coleta nem envia dados. As chaves e URLs são gerenciadas localmente no navegador, sem conexão com serviços externos; abrir uma URL salva exige conexão com o site. Você pode consultar o código-fonte pelo link no nome do autor, no rodapé da extensão.</p>
-    <p><a href="https://gist.githubusercontent.com/srolemberg/3c63430f265ed88fd8774c147da845ba/raw/cf3e2fd92779a8e687a3849d79a4d2f14349468b/gistfile1.txt" target="_blank" rel="noopener noreferrer" data-i18n="privacyPolicyLink">Ler a política de privacidade</a></p>
+<details class="m3-accordion" name="popup-accordions">
+    <summary class="m3-list-item">
+        <svg class="m3-list-item-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4Zm0 20c-4.03-1.22-7-5.54-7-9.93V6.3l7-3.11 7 3.11V11c0 4.39-2.97 8.71-7 9.93ZM12 7a3 3 0 0 0-3 3v1H8v6h8v-6h-1v-1a3 3 0 0 0-3-3Zm-1 4v-1a1 1 0 1 1 2 0v1z"/></svg>
+        <span class="m3-list-item-label" data-i18n="privacyHeading">Privacidade e dados</span>
+        <svg class="m3-list-item-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>
+    </summary>
+    <div class="m3-accordion-content">
+        <p data-i18n="howItWorksPrivacy">A extensão não coleta nem envia dados. As chaves e URLs são gerenciadas localmente no navegador, sem conexão com serviços externos; abrir uma URL salva exige conexão com o site. Você pode consultar o código-fonte pelo link no nome do autor, no rodapé da extensão.</p>
+        <p><a href="https://gist.githubusercontent.com/srolemberg/3c63430f265ed88fd8774c147da845ba/raw/cf3e2fd92779a8e687a3849d79a4d2f14349468b/gistfile1.txt" target="_blank" rel="noopener noreferrer" data-i18n="privacyPolicyLink">Ler a política de privacidade</a></p>
+    </div>
 </details>
+</div>
 <iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
 <script src="i18n.js"></script>
 <script src="tag-utils.js"></script>

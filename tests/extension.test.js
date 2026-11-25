@@ -276,6 +276,62 @@ test('loads the extension and exercises basic options and popup flows', {
             'renders the card avatar at medium size',
         );
         assert.equal(
+            await popupPage.$$eval(
+                '.m3-accordion > summary.m3-list-item',
+                (items) => items.length,
+            ),
+            3,
+            'renders each collapsible section as a list item',
+        );
+        assert.equal(
+            await popupPage.$eval(
+                '.m3-accordion-list',
+                (list) => getComputedStyle(list).rowGap,
+            ),
+            '0px',
+            'keeps the accordion list items flush without spacing',
+        );
+        assert.deepEqual(
+            await popupPage.evaluate(() => {
+                const buttons = document.querySelector('.open-buttons');
+                const divider = document.querySelector('.m3-divider');
+                const list = document.querySelector('.m3-accordion-list');
+                const buttonRect = buttons.getBoundingClientRect();
+                const dividerRect = divider.getBoundingClientRect();
+                const listRect = list.getBoundingClientRect();
+                return {
+                    above: dividerRect.top - buttonRect.bottom,
+                    below: listRect.top - dividerRect.bottom,
+                };
+            }),
+            {above: 16, below: 8},
+            'adds spacing above the divider when the status message is empty',
+        );
+        assert.equal(
+            await popupPage.$$eval(
+                '.m3-accordion > summary button',
+                (buttons) => buttons.length,
+            ),
+            0,
+            'keeps each accordion list item focused only on toggling its section',
+        );
+        const accordionItems = await popupPage.$$('.m3-accordion');
+        await accordionItems[0].$('summary').then((summary) => summary.click());
+        assert.equal(
+            await popupPage.$eval('.m3-accordion', (accordion) => accordion.open),
+            true,
+            'opens an accordion when its list item is activated',
+        );
+        await accordionItems[1].$('summary').then((summary) => summary.click());
+        assert.deepEqual(
+            await popupPage.$$eval(
+                '.m3-accordion',
+                (accordions) => accordions.map((accordion) => accordion.open),
+            ),
+            [false, true, false],
+            'opens only the activated accordion in the list group',
+        );
+        assert.equal(
             await popupPage.$eval('#last-access-title', (element) => element.textContent),
             'puppeteer-check-20',
             'shows the accessed tag as the card title',
