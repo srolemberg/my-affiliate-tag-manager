@@ -17,6 +17,9 @@
   "manageTagsLink": {
     "message": "Abrir configurações e gerenciar tags"
   },
+  "openSettingsError": {
+    "message": "Não foi possível abrir as configurações."
+  },
   "addTagInSettings": {
     "message": "Adicione uma tag nas configurações para começar."
   },
@@ -219,6 +222,20 @@
   },
   "noAccessRecorded": {
     "message": "Nenhum acesso registrado"
+  },
+  "noAccessTagTitle": {
+    "message": "Nenhuma tag acessada"
+  },
+  "lastAccessedDetails": {
+    "message": "Último acesso: $1 às $2",
+    "placeholders": {
+      "date": {
+        "content": "$1"
+      },
+      "time": {
+        "content": "$2"
+      }
+    }
   },
   "openCurrentTabButton": {
     "message": "Abrir na aba atual"

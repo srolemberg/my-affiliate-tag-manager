@@ -17,6 +17,9 @@
   "manageTagsLink": {
     "message": "Open settings and manage tags"
   },
+  "openSettingsError": {
+    "message": "Could not open settings."
+  },
   "addTagInSettings": {
     "message": "Add a tag in settings to get started."
   },
@@ -219,6 +222,20 @@
   },
   "noAccessRecorded": {
     "message": "No access recorded"
+  },
+  "noAccessTagTitle": {
+    "message": "No tag accessed"
+  },
+  "lastAccessedDetails": {
+    "message": "Last accessed: $1 at $2",
+    "placeholders": {
+      "date": {
+        "content": "$1"
+      },
+      "time": {
+        "content": "$2"
+      }
+    }
   },
   "openCurrentTabButton": {
     "message": "Open in current tab"

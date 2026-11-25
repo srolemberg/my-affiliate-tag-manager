@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title data-i18n="appName">Minhas Tags de Afiliado</title>
+    <link rel="stylesheet" href="M3/css/app.css">
     <style>
         body {
             box-sizing: border-box;
@@ -11,7 +12,7 @@
             font: 14px Arial, sans-serif;
             gap: 8px;
             margin: 0;
-            padding: 8px 32px 52px 16px;
+            padding: 0 16px 52px;
             width: 320px;
         }
 
@@ -20,8 +21,93 @@
             min-width: 0;
         }
 
+        .popup-app-bar {
+            align-items: center;
+            background: var(--md-sys-color-surface-container);
+            display: flex;
+            justify-content: space-between;
+            margin: 0 -16px;
+            min-height: 56px;
+            padding: 0 16px;
+        }
+
+        .popup-app-bar h1 {
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        #open-settings-button {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            border-radius: 50%;
+            color: var(--md-sys-color-on-surface);
+            display: inline-flex;
+            flex: 0 0 40px;
+            height: 40px;
+            justify-content: center;
+            min-height: 40px;
+            padding: 8px;
+            width: 40px;
+        }
+
+        #open-settings-button svg {
+            fill: currentColor;
+            height: 24px;
+            width: 24px;
+        }
+
         #amazon-content {
             display: contents;
+        }
+
+        .last-access-card {
+            align-items: center;
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 16px;
+            box-sizing: border-box;
+            box-shadow:
+                0 1px 2px rgb(0 0 0 / 15%),
+                0 1px 3px rgb(0 0 0 / 30%);
+            display: flex;
+            gap: 12px;
+            height: 80px;
+            margin: 4px 4px 8px;
+            min-height: 80px;
+            padding: 12px;
+        }
+
+        .last-access-avatar {
+            align-items: center;
+            background: var(--md-sys-color-primary-container);
+            border-radius: 50%;
+            color: var(--md-sys-color-on-primary-container);
+            display: flex;
+            flex: 0 0 40px;
+            font-size: 20px;
+            height: 40px;
+            justify-content: center;
+            width: 40px;
+        }
+
+        .last-access-copy {
+            display: grid;
+            flex: 1;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .last-access-title {
+            color: var(--md-sys-color-on-surface);
+            font-size: 18px;
+            font-weight: 500;
+            overflow-wrap: anywhere;
+        }
+
+        .last-access-subtitle {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 14px;
+            overflow-wrap: anywhere;
         }
 
         .open-buttons {
@@ -29,9 +115,106 @@
             gap: 8px;
         }
 
+        .tag-picker {
+            position: relative;
+        }
+
+        #saved-tag-button {
+            align-items: center;
+            background: var(--md-sys-color-secondary-container);
+            border: 0;
+            border-radius: 16px;
+            color: var(--md-sys-color-on-secondary-container);
+            display: flex;
+            font-size: 14px;
+            gap: 11px;
+            justify-content: flex-start;
+            min-height: 48px;
+            overflow: hidden;
+            padding: 0 14px;
+            position: relative;
+            width: 100%;
+        }
+
+        #saved-tag-button svg,
+        #saved-tag-button span {
+            position: relative;
+            z-index: 1;
+        }
+
+        #saved-tag-button svg {
+            fill: currentColor;
+            flex: 0 0 24px;
+            height: 24px;
+            width: 24px;
+        }
+
+        #saved-tag-button span {
+            white-space: nowrap;
+        }
+
+        #saved-tag-menu {
+            background: var(--md-sys-color-surface-container);
+            border-radius: 4px;
+            box-shadow:
+                0 2px 4px rgb(0 0 0 / 20%),
+                0 4px 8px rgb(0 0 0 / 15%);
+            left: 0;
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 4px 0;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            z-index: 2;
+        }
+
+        #saved-tag-menu[hidden] {
+            display: none;
+        }
+
+        .saved-tag-option {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            color: var(--md-sys-color-on-surface);
+            display: flex;
+            font-size: 14px;
+            justify-content: space-between;
+            min-height: 48px;
+            padding: 8px 16px;
+            text-align: left;
+            width: 100%;
+        }
+
+        .saved-tag-option:hover,
+        .saved-tag-option[aria-selected="true"] {
+            background: var(--md-sys-color-surface-container-high);
+        }
+
+        .saved-tag-option[aria-selected="true"]::after {
+            color: var(--md-sys-color-primary);
+            content: "\2713";
+            font-weight: 700;
+            margin-left: 12px;
+        }
+
+        .saved-tag-option:disabled {
+            color: var(--md-sys-color-on-surface-variant);
+            opacity: 0.6;
+        }
+
         .open-buttons button {
+            background: var(--md-sys-color-primary);
+            border: 0;
+            border-radius: 999px;
+            color: var(--md-sys-color-on-primary);
             flex: 1;
+            font-size: 16px;
+            min-height: 48px;
             min-width: 0;
+            padding: 0 20px;
             width: auto;
         }
 
@@ -53,24 +236,13 @@
         }
 
         .how-it-works .disclaimer {
-            color: #d93025;
+            color: var(--md-sys-color-error);
         }
 
-        #manage-tags-link {
-            background: #f0f0f0;
-            border: 1px solid #888;
-            border-radius: 2px;
-            box-sizing: border-box;
-            color: inherit;
-            padding: 7px;
-            text-align: center;
-            text-decoration: none;
-        }
-
-        hr {
+        .m3-divider {
+            background: var(--md-sys-color-outline-variant);
             border: 0;
-            border-top: 1px solid #ccc;
-            height: 0;
+            height: 2px;
             width: 100%;
         }
 
@@ -89,18 +261,18 @@
         }
 
         .badge-legend-valid {
-            color: #188038;
+            color: var(--md-sys-color-tertiary);
         }
 
         .badge-legend-different {
-            color: #b26a00;
+            color: var(--md-sys-color-secondary);
         }
 
         .badge-legend-invalid {
-            color: #d93025;
+            color: var(--md-sys-color-error);
         }
 
-        select, button {
+        button {
             box-sizing: border-box;
             padding: 7px;
             width: 100%;
@@ -120,21 +292,38 @@
     </style>
 </head>
 <body>
-<h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
+<header class="popup-app-bar">
+    <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
+    <button id="open-settings-button" type="button" data-i18n-aria-label="manageTagsLink" aria-label="Abrir configurações e gerenciar tags">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.07-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.28 7.28 0 0 0-1.63-.94l-.36-2.54A.49.49 0 0 0 13.88 2h-3.76a.49.49 0 0 0-.49.42L9.27 4.96c-.59.23-1.14.55-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.72 8.48a.5.5 0 0 0 .12.64l2.03 1.58a6.48 6.48 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.12.21.37.3.61.22l2.39-.96c.49.39 1.04.71 1.63.94l.36 2.54c.04.24.24.42.49.42h3.76c.25 0 .45-.18.49-.42l.36-2.54c.59-.23 1.14-.55 1.63-.94l2.39.96c.24.09.49 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.02-1.58ZM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7Z"/>
+        </svg>
+    </button>
+</header>
+<article class="last-access-card" aria-live="polite">
+    <span id="last-access-avatar" class="last-access-avatar" aria-hidden="true"></span>
+    <div class="last-access-copy">
+        <h2 id="last-access-title" class="last-access-title"></h2>
+        <p id="last-access-subtitle" class="last-access-subtitle"></p>
+    </div>
+</article>
 <section id="amazon-content">
-    <p id="detected-tag" aria-live="polite" data-i18n="checkingTag">Verificando tag...</p>
-    <label for="saved-tag" data-i18n="affiliateTag">Tag de afiliado</label>
-    <select id="saved-tag">
-        <option value="" selected data-i18n="selectTag">Selecione uma tag</option>
-    </select>
+    <div class="tag-picker">
+        <button id="saved-tag-button" type="button" data-i18n-aria-label="selectTag" aria-label="Selecione uma tag" aria-haspopup="listbox" aria-expanded="false" aria-controls="saved-tag-menu">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21.41 11.58l-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.05-.59-1.42ZM13 20l-9-9V4h7l9 9-7 7ZM6.5 10A1.5 1.5 0 1 0 6.5 7a1.5 1.5 0 0 0 0 3Z"/>
+                </svg>
+                <span id="saved-tag-button-label" data-i18n="selectTag">Selecione uma tag</span>
+        </button>
+        <div id="saved-tag-menu" role="listbox" aria-labelledby="saved-tag-button" hidden></div>
+    </div>
     <div class="open-buttons">
         <button id="open-current-tab-button" type="button" disabled data-i18n="openCurrentTabButton">Abrir na aba atual</button>
         <button id="open-new-tab-button" type="button" disabled data-i18n="openNewTabButton">Abrir em nova aba</button>
     </div>
     <p id="status" role="status" aria-live="polite"></p>
 </section>
-<hr>
-<a id="manage-tags-link" href="options.html" target="_blank" data-i18n="manageTagsLink">Abrir configurações e gerenciar tags</a>
+<hr class="m3-divider">
 <details class="how-it-works">
     <summary data-i18n="howItWorksHeading">Como funciona</summary>
     <p data-i18n="howItWorksCapture">Ao visitar uma página cuja URL contém uma chave de afiliado, a extensão identifica e armazena essa URL em uma lista interna. Assim, você pode acessá-la rapidamente sem precisar procurá-la novamente.</p>
@@ -158,6 +347,7 @@
 <iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
 <script src="i18n.js"></script>
 <script src="tag-utils.js"></script>
+<script src="M3/js/theme.js"></script>
 <script src="popup.js"></script>
 </body>
 </html>

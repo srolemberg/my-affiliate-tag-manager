@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title data-i18n="appName">Minhas Tags de Afiliado</title>
+    <link rel="stylesheet" href="M3/css/app.css">
     <style>
         body {
             font: 16px Arial, sans-serif;
@@ -57,13 +58,13 @@
         }
 
         #add-error {
-            color: #b00020;
+            color: var(--md-sys-color-error);
             grid-column: 1 / -1;
             min-height: 1.2em;
         }
 
         .tag-url-error {
-            color: #b00020;
+            color: var(--md-sys-color-error);
             min-height: 1.2em;
         }
 
@@ -122,6 +123,7 @@
 <iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
     <script src="i18n.js"></script>
     <script src="tag-utils.js"></script>
+    <script src="M3/js/theme.js"></script>
     <script src="options.js"></script>
     </body>
     </html>

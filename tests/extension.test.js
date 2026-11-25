@@ -42,6 +42,18 @@ test('loads the extension and exercises basic options and popup flows', {
         assert.equal(manifest.background.service_worker, 'background.js');
         assert.equal(manifest.action.default_popup, 'popup.html');
         await optionsPage.waitForSelector('#add-form');
+        assert.match(
+            await optionsPage.evaluate(() => document.documentElement.className),
+            /^(light|dark)(-(medium|high)-contrast)?$/,
+            'selects a Material 3 color and contrast palette',
+        );
+        assert.notEqual(
+            await optionsPage.evaluate(
+                () => getComputedStyle(document.body).backgroundColor,
+            ),
+            'rgba(0, 0, 0, 0)',
+            'loads the local Material 3 surface styles',
+        );
         assert.equal(
             await optionsPage.$eval('#add-button', (button) => button.disabled),
             true,
@@ -66,32 +78,161 @@ test('loads the extension and exercises basic options and popup flows', {
         await optionsPage.waitForSelector(
             '#tag-list li[data-original-tag="puppeteer-check-20"]',
         );
+        await optionsPage.evaluate(async () => {
+            await chrome.storage.local.set({
+                lastAccessedTag: {
+                    tag: 'puppeteer-check-20',
+                    lastAccessed: '2026-11-25T12:34:56.000Z',
+                },
+            });
+        });
 
         const popupPage = await browser.newPage();
         popupPage.on('pageerror', (error) => pageErrors.push(error));
+        await optionsPage.close();
         await popupPage.goto(
             `chrome-extension://${extensionId}/popup.html`,
             {waitUntil: 'domcontentloaded'},
         );
-        await popupPage.waitForFunction(
-            () => document.querySelector('#saved-tag option[value="puppeteer-check-20"]'),
+        await popupPage.waitForSelector(
+            '#saved-tag-menu [data-tag="puppeteer-check-20"]',
+        );
+        assert.equal(await popupPage.$('input#saved-tag'), null);
+        assert.equal(await popupPage.$('label[for="saved-tag"]'), null);
+        assert.equal(
+            await popupPage.$eval('#saved-tag-button', (button) => (
+                getComputedStyle(button).borderRadius
+            )),
+            '16px',
+            'renders the tonal trigger with the reference corner radius',
+        );
+        assert.equal(
+            await popupPage.$eval('#saved-tag-button', (button) => (
+                getComputedStyle(button).height
+            )),
+            '48px',
+            'renders the tonal trigger at medium size',
+        );
+        assert.equal(await popupPage.$eval('#saved-tag-button svg', (icon) => (
+            icon.querySelector('path')?.getAttribute('d').includes('9-9A2')
+        )), true, 'uses a Material tag icon');
+        assert.equal(
+            await popupPage.$eval(
+                '#saved-tag-button-label',
+                (label) => label.textContent,
+            ),
+            'Selecione uma tag',
+            'shows the default selection prompt on the button',
+        );
+        await popupPage.click('#saved-tag-button');
+        assert.equal(
+            await popupPage.$eval('#saved-tag-menu', (menu) => menu.hidden),
+            false,
+            'opens the saved-tag menu from the button',
+        );
+        assert.equal(
+            await popupPage.$eval(
+                '#saved-tag-menu [data-tag="puppeteer-check-20"]',
+                (option) => option.textContent,
+            ),
+            'Puppeteer smoke test',
+            'shows the same saved-tag label as the former dropdown',
+        );
+        await popupPage.click('#saved-tag-menu [data-tag="puppeteer-check-20"]');
+        assert.equal(
+            await popupPage.$eval(
+                '#saved-tag-button-label',
+                (label) => label.textContent,
+            ),
+            'Puppeteer smoke test',
+            'updates the button label with the selected tag label',
+        );
+        assert.equal(
+            await popupPage.$eval('#saved-tag-menu', (menu) => menu.hidden),
+            true,
+            'closes the menu after choosing a tag',
+        );
+        assert.equal(
+            await popupPage.$eval('#open-new-tab-button', (button) => button.disabled),
+            false,
+            'enables URL actions after selecting a valid tag',
+        );
+        assert.deepEqual(
+            await popupPage.$$eval(
+                '.open-buttons button',
+                (buttons) => buttons.map((button) => ({
+                    borderRadius: getComputedStyle(button).borderRadius,
+                    height: getComputedStyle(button).height,
+                    iconCount: button.querySelectorAll('svg').length,
+                })),
+            ),
+            [
+                {borderRadius: '999px', height: '48px', iconCount: 0},
+                {borderRadius: '999px', height: '48px', iconCount: 0},
+            ],
+            'renders both tab-opening actions as medium round text-only buttons',
+        );
+        assert.equal(
+            await popupPage.$eval('.last-access-card', (card) => (
+                getComputedStyle(card).height
+            )),
+            '80px',
+            'renders the last-access card at medium height',
+        );
+        assert.equal(
+            await popupPage.$eval('.last-access-avatar', (avatar) => (
+                getComputedStyle(avatar).height
+            )),
+            '40px',
+            'renders the card avatar at medium size',
+        );
+        assert.equal(
+            await popupPage.$eval('#last-access-title', (element) => element.textContent),
+            'puppeteer-check-20',
+            'shows the accessed tag as the card title',
+        );
+        assert.equal(
+            await popupPage.$eval('#last-access-avatar', (element) => element.textContent),
+            'P',
+            'uses the saved description initial for the avatar',
+        );
+        assert.match(
+            await popupPage.$eval('#last-access-subtitle', (element) => element.textContent),
+            /Last accessed:|Último acesso:/,
+            'shows localized last-access details in the card subtitle',
         );
         const badgeLegendCodePoints = await popupPage.$$eval(
             '.badge-legend-symbol',
             (elements) => elements.map((element) => element.textContent.codePointAt(0)),
+        );
+        assert.equal(
+            await popupPage.$eval(
+                '.popup-app-bar h1',
+                (heading) => heading.textContent.trim().length > 0,
+            ),
+            true,
+            'renders the app title in the app bar',
+        );
+        assert.equal(await popupPage.$('#open-settings-button') !== null, true);
+        assert.equal(await popupPage.$('#manage-tags-link'), null);
+        assert.equal(
+            await popupPage.$$eval('body > h1', (headings) => headings.length),
+            0,
+            'does not render a separate legacy title',
         );
         assert.deepEqual(
             badgeLegendCodePoints,
             [0x2713, 0x0021, 0x2717],
             'popup legend must render the exact success, alert, and error code points',
         );
-        assert.equal(
-            await popupPage.$eval(
-                '#saved-tag option[value="puppeteer-check-20"]',
-                (option) => option.textContent,
-            ),
-            'Puppeteer smoke test',
+        const settingsTargetPromise = browser.waitForTarget(
+            (target) => target.url() === `chrome-extension://${extensionId}/options.html`,
+            {timeout: 10000},
         );
+        await popupPage.click('#open-settings-button');
+        const settingsTarget = await settingsTargetPromise;
+        const settingsPage = await settingsTarget.page();
+        await settingsPage.waitForSelector('#add-form');
         assert.deepEqual(pageErrors, []);
     } finally {
         await browser.close();

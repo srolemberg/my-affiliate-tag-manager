@@ -1,0 +1,80 @@
+@import url("light.css");
+@import url("light-mc.css");
+@import url("light-hc.css");
+@import url("dark.css");
+@import url("dark-mc.css");
+@import url("dark-hc.css");
+
+html {
+    background-color: var(--md-sys-color-background);
+    color: var(--md-sys-color-on-background);
+}
+
+html.light,
+html.light-medium-contrast,
+html.light-high-contrast {
+    color-scheme: light;
+}
+
+html.dark,
+html.dark-medium-contrast,
+html.dark-high-contrast {
+    color-scheme: dark;
+}
+
+body {
+    background-color: var(--md-sys-color-background);
+    color: var(--md-sys-color-on-background);
+}
+
+button,
+input,
+select {
+    border: 1px solid var(--md-sys-color-outline);
+    border-radius: 4px;
+    color: var(--md-sys-color-on-surface);
+    font: inherit;
+}
+
+button,
+select,
+input {
+    background-color: var(--md-sys-color-surface-container-lowest);
+}
+
+button {
+    background-color: var(--md-sys-color-primary);
+    border-color: var(--md-sys-color-primary);
+    border-radius: 20px;
+    color: var(--md-sys-color-on-primary);
+    cursor: pointer;
+    min-height: 40px;
+}
+
+button:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+input,
+select {
+    min-height: 40px;
+}
+
+a {
+    color: var(--md-sys-color-primary);
+}
+
+:focus-visible {
+    outline: 2px solid var(--md-sys-color-primary);
+    outline-offset: 2px;
+}
+
+::selection {
+    background-color: var(--md-sys-color-primary-container);
+    color: var(--md-sys-color-on-primary-container);
+}
+
+#extension-footer {
+    background-color: var(--md-sys-color-surface-container);
+}
