@@ -488,11 +488,12 @@
         #extension-footer {
             border: 0;
             display: block;
-            height: 36px;
-            left: 0;
+            height: 64px;
+            left: 50%;
+            max-width: 720px;
             position: fixed;
-            right: 0;
             bottom: 0;
+            transform: translateX(-50%);
             z-index: 1;
             width: 100%;
         }
@@ -504,8 +505,8 @@
         <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
         <p data-i18n="optionsScreenSupportingText">Configurações</p>
     </div>
-    <a id="report-problem-link" class="app-bar-action app-bar-action-link" href="https://github.com/srolemberg/my-affiliate-tag-manager/issues" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="reportProblems" data-i18n-title="reportProblems" title="Reportar problemas">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8h-2.81a5.99 5.99 0 0 0-1.1-1.65l1.45-1.45L16.12 3.5l-1.7 1.7a5.984 5.984 0 0 0-4.84 0l-1.7-1.7L6.46 4.9l1.45 1.45A5.985 5.985 0 0 0 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81A6.004 6.004 0 0 0 12 21a6.004 6.004 0 0 0 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/></svg>
+    <a id="project-link" class="app-bar-action app-bar-action-link" href="https://github.com/srolemberg/my-affiliate-tag-manager" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="projectLinkTooltip" data-i18n-title="projectLinkTooltip" title="Conheça o projeto">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.387.6.111.82-.261.82-.577 0-.285-.011-1.04-.016-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.84 1.237 1.84 1.237 1.07 1.834 2.807 1.304 3.492.997.108-.775.418-1.305.762-1.605-2.665-.3-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.536-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.655 1.653.243 2.874.12 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.628-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.015 2.898-.015 3.293 0 .319.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12Z"/></svg>
     </a>
     <a id="rate-app-link" class="app-bar-action app-bar-action-link" href="https://chromewebstore.google.com/detail/khffmniafjplifpandmgibpkkfbbbnom?utm_source=item-share-app" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="rateApp" data-i18n-title="goToStoreTooltip" title="Ir para a loja">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 17.27 5.18 3.13-1.64-7.03L21 8.64l-7.19-.61L12 1.4 9.19 8.03 2 8.64l5.46 4.73-1.64 7.03L12 17.27Z"/></svg>
@@ -582,7 +583,7 @@
     </footer>
 </section>
 
-<iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
+<iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão"></iframe>
     <script src="i18n.js"></script>
     <script src="tag-utils.js"></script>
     <script src="M3/js/theme.js"></script>

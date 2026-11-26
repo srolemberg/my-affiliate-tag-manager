@@ -105,6 +105,9 @@ async function runExtensionFlow(locale) {
             'rateApp',
             'goToStoreTooltip',
             'reportProblems',
+            'extensionFooter',
+            'extensionFooterFrameTitle',
+            'projectLinkTooltip',
             'optionsIntro',
             'manualAddHeading',
             'addButton',
@@ -128,6 +131,7 @@ async function runExtensionFlow(locale) {
         ], {
             deleteTagAriaLabel: 'puppeteer-check-20',
             deleteTagTooltip: 'puppeteer-check-20',
+            extensionFooter: manifest.version,
         });
         assert.deepEqual(
             await getUnlocalizedMarkup(optionsPage),
@@ -144,6 +148,120 @@ async function runExtensionFlow(locale) {
             true,
             'places the title, supporting text, floating labels, and primary action with tooltip in the add card',
         );
+        const footerFrame = optionsPage.frames().find((frame) => (
+            frame.url().endsWith('/footer.html')
+        ));
+        assert.ok(footerFrame, 'loads the shared footer app bar');
+        await footerFrame.waitForSelector('#footer-label');
+        const originalViewport = optionsPage.viewport();
+        const footerWidth = Math.min(720, originalViewport.width);
+        const footerSideInset = (originalViewport.width - footerWidth) / 2;
+        assert.deepEqual(
+            await optionsPage.$eval('#extension-footer', (iframe) => ({
+                title: iframe.title,
+                height: getComputedStyle(iframe).height,
+                position: getComputedStyle(iframe).position,
+                bottom: getComputedStyle(iframe).bottom,
+                width: iframe.getBoundingClientRect().width,
+                left: iframe.getBoundingClientRect().left,
+                right: window.innerWidth - iframe.getBoundingClientRect().right,
+            })),
+            {
+                title: optionsMessages.extensionFooterFrameTitle,
+                height: '64px',
+                position: 'fixed',
+                bottom: '0px',
+                width: footerWidth,
+                left: footerSideInset,
+                right: footerSideInset,
+            },
+            'centers the capped-width bottom version app bar with its localized frame title',
+        );
+        await optionsPage.setViewport({width: 600, height: originalViewport.height});
+        assert.deepEqual(
+            await optionsPage.$eval('#extension-footer', (iframe) => ({
+                width: iframe.getBoundingClientRect().width,
+                left: iframe.getBoundingClientRect().left,
+                right: window.innerWidth - iframe.getBoundingClientRect().right,
+            })),
+            {width: 600, left: 0, right: 0},
+            'fits the bottom app bar to the available width on narrower screens',
+        );
+        await optionsPage.setViewport(originalViewport);
+        assert.deepEqual(
+            await footerFrame.evaluate(() => {
+                const footer = document.querySelector('footer');
+                const sample = document.createElement('span');
+                sample.style.backgroundColor = 'var(--md-sys-color-surface-container)';
+                document.body.append(sample);
+                const surfaceContainer = getComputedStyle(sample).backgroundColor;
+                sample.remove();
+                return {
+                    text: footer.textContent.trim(),
+                    linkCount: footer.querySelectorAll('a').length,
+                    display: getComputedStyle(footer).display,
+                    alignItems: getComputedStyle(footer).alignItems,
+                    justifyContent: getComputedStyle(footer).justifyContent,
+                    fontSize: getComputedStyle(footer).fontSize,
+                    lineHeight: getComputedStyle(footer).lineHeight,
+                    versionCentered: Math.abs(
+                        document.querySelector('#footer-label').getBoundingClientRect().left +
+                            document.querySelector('#footer-label').getBoundingClientRect().width / 2 -
+                            footer.getBoundingClientRect().left -
+                            footer.getBoundingClientRect().width / 2,
+                    ) < 1,
+                    usesSurfaceContainer:
+                        getComputedStyle(document.body).backgroundColor === surfaceContainer,
+                };
+            }),
+            {
+                text: optionsMessages.extensionFooter,
+                linkCount: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                lineHeight: '20px',
+                versionCentered: true,
+                usesSurfaceContainer: true,
+            },
+            'centers the version in the Material 3 footer app bar',
+        );
+        assert.deepEqual(
+            await footerFrame.$eval('#report-problem-link', (link) => ({
+                title: link.title,
+                ariaLabel: link.getAttribute('aria-label'),
+                href: link.href,
+                target: link.target,
+                rel: link.rel,
+                width: getComputedStyle(link).width,
+                height: getComputedStyle(link).height,
+                rightInset: document.querySelector('footer').getBoundingClientRect().right -
+                    link.getBoundingClientRect().right,
+                iconWidth: getComputedStyle(link.querySelector('svg')).width,
+                iconHeight: getComputedStyle(link.querySelector('svg')).height,
+            })),
+            {
+                title: optionsMessages.reportProblems,
+                ariaLabel: optionsMessages.reportProblems,
+                href: 'https://github.com/srolemberg/my-affiliate-tag-manager/issues',
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                width: '40px',
+                height: '40px',
+                rightInset: 16,
+                iconWidth: '24px',
+                iconHeight: '24px',
+            },
+            'provides the localized report-problems link in the footer app-bar icon action',
+        );
+        await footerFrame.hover('#report-problem-link');
+        await footerFrame.waitForFunction(() => (
+            Number.parseFloat(getComputedStyle(
+                document.querySelector('#report-problem-link'),
+                '::before',
+            ).opacity) >= 0.08
+        ));
         assert.equal(
             await optionsPage.$eval('#saved-tags-card', (card, messages) => (
                 card.querySelector('.saved-tags-header-heading h2[data-i18n="savedTagsHeading"]')?.textContent === messages.savedTagsHeading &&
@@ -278,7 +396,7 @@ async function runExtensionFlow(locale) {
             'uses the standard app-bar star action with localized accessible name and tooltip',
         );
         assert.deepEqual(
-            await optionsPage.$eval('#report-problem-link', (link) => ({
+            await optionsPage.$eval('#project-link', (link) => ({
                 title: link.getAttribute('title'),
                 ariaLabel: link.getAttribute('aria-label'),
                 href: link.getAttribute('href'),
@@ -293,9 +411,9 @@ async function runExtensionFlow(locale) {
                 borderRadius: getComputedStyle(link).borderRadius,
             })),
             {
-                title: optionsMessages.reportProblems,
-                ariaLabel: optionsMessages.reportProblems,
-                href: 'https://github.com/srolemberg/my-affiliate-tag-manager/issues',
+                title: optionsMessages.projectLinkTooltip,
+                ariaLabel: optionsMessages.projectLinkTooltip,
+                href: 'https://github.com/srolemberg/my-affiliate-tag-manager',
                 target: '_blank',
                 rel: 'noopener noreferrer',
                 isStandardAppBarAction: true,
@@ -306,7 +424,7 @@ async function runExtensionFlow(locale) {
                 buttonWidth: '40px',
                 borderRadius: '50%',
             },
-            'offers a localized report-problems icon with the requested issue link',
+            'offers the localized project link in the options app bar',
         );
         await optionsPage.hover('#rate-app-link');
         await optionsPage.waitForFunction(() => (

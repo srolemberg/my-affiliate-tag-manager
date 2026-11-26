@@ -42,7 +42,7 @@
     "message": "Rate"
   },
   "goToStoreTooltip": {
-    "message": "Go to the store"
+    "message": "Rate us in the store"
   },
   "reportProblems": {
     "message": "Report a problem"
@@ -361,7 +361,7 @@
     }
   },
   "extensionFooter": {
-    "message": "Version $1 · Author:",
+    "message": "Version: $1",
     "placeholders": {
       "version": {
         "content": "$1"
@@ -369,7 +369,10 @@
     }
   },
   "extensionFooterFrameTitle": {
-    "message": "Extension version and project author"
+    "message": "Extension version"
+  },
+  "projectLinkTooltip": {
+    "message": "Explore the project"
   },
   "badgeStatusValid": {
     "message": "Valid affiliate link saved"

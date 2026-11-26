@@ -1,4 +1,4 @@
-/** Displays the extension version in the shared footer. */
+/** Displays the extension version in the shared footer app bar. */
 const footerLabel = document.getElementById('footer-label');
 const extensionVersion = chrome.runtime.getManifest()?.version;
 if (!footerLabel || typeof extensionVersion !== 'string') {
@@ -8,5 +8,4 @@ if (!footerLabel || typeof extensionVersion !== 'string') {
         'extensionFooter',
         extensionVersion,
     );
-    footerLabel.append(document.createTextNode(' '));
 }

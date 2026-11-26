@@ -8,26 +8,91 @@
         html, body {
             background: var(--md-sys-color-surface-container);
             color: var(--md-sys-color-on-surface-variant);
-            font: 12px Arial, sans-serif;
+            font: 14px/20px Roboto, Arial, sans-serif;
             height: 100%;
             margin: 0;
         }
 
-        footer {
+        .footer-app-bar {
             align-items: center;
             box-sizing: border-box;
             display: flex;
             height: 100%;
             justify-content: center;
-            padding: 10px;
+            padding: 0 16px;
+            position: relative;
             text-align: center;
+        }
+
+        #footer-label {
+            left: 50%;
+            position: absolute;
+            transform: translateX(-50%);
+        }
+
+        .footer-report-link {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            border-radius: 50%;
+            color: var(--md-sys-color-on-surface-variant);
+            display: inline-flex;
+            height: 40px;
+            isolation: isolate;
+            justify-content: center;
+            overflow: hidden;
+            padding: 0;
+            position: absolute;
+            right: 16px;
+            text-decoration: none;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: color 150ms ease;
+            width: 40px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .footer-report-link::before {
+            background: currentColor;
+            border-radius: inherit;
+            content: "";
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            transition: opacity 150ms ease;
+            z-index: -1;
+        }
+
+        .footer-report-link:hover::before {
+            opacity: 0.08;
+        }
+
+        .footer-report-link:focus-visible::before,
+        .footer-report-link:active::before {
+            opacity: 0.12;
+        }
+
+        .footer-report-link svg {
+            fill: currentColor;
+            height: 24px;
+            width: 24px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .footer-report-link,
+            .footer-report-link::before {
+                transition-duration: 0.01ms;
+            }
         }
     </style>
 </head>
 <body>
-<footer>
+<footer class="footer-app-bar" role="contentinfo">
     <span id="footer-label"></span>
-    <a href="https://github.com/srolemberg/my-affiliate-tag-manager" title="https://github.com/srolemberg/my-affiliate-tag-manager" target="_blank" rel="noopener noreferrer">Samir Rolemberg</a>
+    <a id="report-problem-link" class="footer-report-link" href="https://github.com/srolemberg/my-affiliate-tag-manager/issues" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="reportProblems" data-i18n-title="reportProblems" title="Reportar problemas">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8h-2.81a5.99 5.99 0 0 0-1.1-1.65l1.45-1.45L16.12 3.5l-1.7 1.7a5.984 5.984 0 0 0-4.84 0l-1.7-1.7L6.46 4.9l1.45 1.45A5.985 5.985 0 0 0 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81A6.004 6.004 0 0 0 12 21a6.004 6.004 0 0 0 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/></svg>
+    </a>
 </footer>
 <script src="i18n.js"></script>
 <script src="M3/js/theme.js"></script>
