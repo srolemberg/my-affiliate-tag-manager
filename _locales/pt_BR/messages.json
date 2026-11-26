@@ -56,6 +56,9 @@
   "optionalDescription": {
     "message": "Descrição (opcional)"
   },
+  "manualAddHeading": {
+    "message": "Adicionar tag"
+  },
   "addButton": {
     "message": "Adicionar"
   },
@@ -73,6 +76,9 @@
   },
   "importJsonLabel": {
     "message": "Importar arquivo JSON (mesclar com a lista atual)"
+  },
+  "importCardHeading": {
+    "message": "Importar tags"
   },
   "manageTagsAriaLabel": {
     "message": "Importar tags de um arquivo JSON"

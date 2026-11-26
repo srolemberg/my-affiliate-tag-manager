@@ -74,12 +74,241 @@
             width: 18px;
         }
 
-        #add-form {
-            align-items: end;
+        #add-form,
+        #saved-tags-card,
+        #import-card {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 16px;
+            box-shadow:
+                0 1px 2px rgb(0 0 0 / 15%),
+                0 1px 3px rgb(0 0 0 / 30%);
+            margin: 16px 0;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .add-card-header,
+        .saved-tags-header,
+        .import-card-header {
+            padding: 20px 16px 12px;
+        }
+
+        .add-card-header h2,
+        .saved-tags-header h2,
+        .import-card-header h2 {
+            color: var(--md-sys-color-on-surface);
+            font-size: 22px;
+            font-weight: 400;
+            line-height: 28px;
+            margin: 0;
+        }
+
+        .add-card-header p {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 14px;
+            line-height: 20px;
+            margin: 4px 0 0;
+        }
+
+        .import-card-content {
+            background: var(--md-sys-color-surface-container);
+            display: grid;
+            gap: 8px;
+            padding: 16px;
+        }
+
+        .import-card-content label {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 14px;
+            line-height: 20px;
+        }
+
+        .import-card-content input {
+            background: transparent;
+            box-sizing: border-box;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .import-card-content input[type="file"]::file-selector-button {
+            background: transparent;
+            border: 1px solid var(--md-sys-color-outline);
+            border-radius: 20px;
+            color: var(--md-sys-color-primary);
+            cursor: pointer;
+            font: inherit;
+            margin-right: 12px;
+            min-height: 40px;
+            padding: 8px 16px;
+            transition:
+                background-color 150ms ease,
+                border-color 150ms ease;
+        }
+
+        .import-card-content input[type="file"]::file-selector-button:hover {
+            background: var(--md-sys-color-secondary-container);
+            border-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+
+        .import-card-content input[type="file"]::file-selector-button:active {
+            background: var(--md-sys-color-primary-container);
+            border-color: var(--md-sys-color-primary-container);
+            color: var(--md-sys-color-on-primary-container);
+        }
+
+        .add-card-fields,
+        .saved-tags-content {
+            background: var(--md-sys-color-surface-container);
+            padding: 16px;
+        }
+
+        .add-card-fields {
+            display: grid;
+            gap: 16px;
+        }
+
+        #tag-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        #tag-list li {
+            margin: 0;
+            padding: 12px 0;
+        }
+
+        #tag-list li:first-child {
+            padding-top: 0;
+        }
+
+        #tag-list li:last-child {
+            padding-bottom: 0;
+        }
+
+        #tag-list .m3-divider {
+            background: var(--md-sys-color-outline-variant);
+            border: 0;
+            height: 2px;
+            margin: 4px 0 0;
+            width: 100%;
+        }
+
+        .text-field {
+            min-width: 0;
+            position: relative;
+        }
+
+        .text-field input {
+            background: transparent;
+            box-sizing: border-box;
+            height: 56px;
+            min-width: 0;
+            padding: 20px 12px 8px;
+            width: 100%;
+        }
+
+        .text-field-label {
+            background: var(--md-sys-color-surface-container);
+            color: var(--md-sys-color-on-surface-variant);
+            cursor: text;
+            display: block;
+            left: 12px;
+            padding: 0 4px;
+            pointer-events: none;
+            position: absolute;
+            top: 17px;
+            transition:
+                color 150ms ease,
+                font-size 150ms ease,
+                left 150ms ease,
+                top 150ms ease;
+        }
+
+        .text-field input:focus {
+            border-color: var(--md-sys-color-primary);
+            border-width: 2px;
+            outline: none;
+        }
+
+        .text-field input:focus + .text-field-label,
+        .text-field input:not(:placeholder-shown) + .text-field-label {
+            font-size: 12px;
+            left: 8px;
+            top: -8px;
+        }
+
+        .text-field input:focus + .text-field-label {
+            color: var(--md-sys-color-primary);
+        }
+
+        .text-field input[aria-invalid="true"] {
+            border-color: var(--md-sys-color-error);
+        }
+
+        .text-field input[aria-invalid="true"] + .text-field-label {
+            color: var(--md-sys-color-error);
+        }
+
+        #add-error,
+        #new-tag-preview {
+            font-size: 12px;
+            line-height: 16px;
+        }
+
+        #add-error {
+            color: var(--md-sys-color-error);
+        }
+
+        #new-tag-preview {
+            color: var(--md-sys-color-on-surface-variant);
+        }
+
+        #add-error:empty,
+        #new-tag-preview:empty {
+            display: none;
+        }
+
+        .add-card-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding: 8px 16px 16px;
+        }
+
+        button {
+            padding: 8px 24px;
+        }
+
+        #tag-list li {
+            display: grid;
+            gap: 8px;
+        }
+
+        .tag-fields {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
-            margin: 16px 0;
+        }
+
+        .tag-fields .text-field {
+            min-width: 0;
+        }
+
+        .tag-url-field {
+            grid-column: 1 / -1;
+        }
+
+        .tag-url-error {
+            color: var(--md-sys-color-error);
+            display: block;
+            font-size: 12px;
+            line-height: 16px;
+            padding: 4px 12px 0;
+        }
+
+        .tag-url-error:empty {
+            display: none;
         }
 
         label {
@@ -92,47 +321,13 @@
             padding: 8px;
         }
 
-        button {
-            padding: 8px 12px;
-        }
-
-        li {
-            border-bottom: 1px solid #ddd;
-            display: grid;
-            gap: 8px;
-            margin: 8px 0;
-            padding: 8px 0;
-        }
-
-        .tag-fields {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
-        }
-
-        .tag-url-field {
-            grid-column: 1 / -1;
-        }
-
-        .add-url-field {
-            grid-column: 1 / -1;
-        }
-
-        #add-error {
-            color: var(--md-sys-color-error);
-            grid-column: 1 / -1;
-            min-height: 1.2em;
-        }
-
-        .tag-url-error {
-            color: var(--md-sys-color-error);
-            min-height: 1.2em;
-        }
-
         .toolbar {
             display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
             gap: 8px;
-            margin: 16px 0;
+            margin: 0;
+            padding: 8px 16px 16px;
         }
 
         #status {
@@ -173,31 +368,50 @@
         </label>
     </div>
 </section>
-<p data-i18n="optionsIntro">As tags encontradas nas URLs da Amazon são salvas automaticamente neste navegador.</p>
-
-<form id="add-form">
-    <label for="new-description"><span data-i18n="optionalDescription">Descrição (opcional)</span>
-        <input id="new-description" name="description">
-    </label>
-    <label class="add-url-field" for="new-url"><span data-i18n="originalUrlLabel">URL original</span>
-        <input id="new-url" name="url" type="url" required>
-    </label>
-    <output id="add-error" class="add-url-field" aria-live="polite"></output>
-    <output id="new-tag-preview" class="add-url-field" aria-live="polite"></output>
-    <button id="add-button" type="submit" disabled data-i18n="addButton">Adicionar</button>
+<form id="add-form" class="add-card">
+    <header class="add-card-header">
+        <h2 data-i18n="manualAddHeading">Adicionar tag</h2>
+        <p data-i18n="optionsIntro">As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador.</p>
+    </header>
+    <div class="add-card-fields">
+        <div class="text-field">
+            <input id="new-description" name="description" placeholder=" ">
+            <label class="text-field-label" for="new-description" data-i18n="optionalDescription">Descrição (opcional)</label>
+        </div>
+        <div class="text-field">
+            <input id="new-url" name="url" type="url" placeholder=" " required aria-describedby="add-error new-tag-preview">
+            <label class="text-field-label" for="new-url" data-i18n="originalUrlLabel">URL original</label>
+        </div>
+        <output id="add-error" aria-live="polite"></output>
+        <output id="new-tag-preview" aria-live="polite"></output>
+    </div>
+    <footer class="add-card-footer">
+        <button id="add-button" type="submit" disabled data-i18n="addButton">Adicionar</button>
+    </footer>
 </form>
 
-<h2 data-i18n="savedTagsHeading">Tags salvas</h2>
-<ul id="tag-list"></ul>
-<div class="toolbar">
-    <button id="save-tags-button" type="button" disabled data-i18n="saveChangesButton">Salvar alterações</button>
-    <button id="export-button" type="button" data-i18n="exportJsonButton">Exportar JSON</button>
-    <button id="delete-all-button" type="button" disabled data-i18n="deleteAllButton">Excluir todas</button>
-</div>
+<section id="saved-tags-card" aria-labelledby="saved-tags-heading">
+    <header class="saved-tags-header">
+        <h2 id="saved-tags-heading" data-i18n="savedTagsHeading">Tags salvas</h2>
+    </header>
+    <div class="saved-tags-content">
+        <ul id="tag-list"></ul>
+    </div>
+    <footer class="toolbar">
+        <button id="save-tags-button" type="button" disabled data-i18n="saveChangesButton">Salvar alterações</button>
+        <button id="export-button" type="button" data-i18n="exportJsonButton">Exportar JSON</button>
+        <button id="delete-all-button" type="button" disabled data-i18n="deleteAllButton">Excluir todas</button>
+    </footer>
+</section>
 
-<section data-i18n-aria-label="manageTagsAriaLabel">
-    <label for="import-file" data-i18n="importJsonLabel">Importar arquivo JSON (mesclar com a lista atual)</label>
-    <input id="import-file" type="file" accept="application/json,.json">
+<section id="import-card" data-i18n-aria-label="manageTagsAriaLabel">
+    <header class="import-card-header">
+        <h2 data-i18n="importCardHeading">Importar tags</h2>
+    </header>
+    <div class="import-card-content">
+        <label for="import-file" data-i18n="importJsonLabel">Importar arquivo JSON (mesclar com a lista atual)</label>
+        <input id="import-file" type="file" accept="application/json,.json">
+    </div>
 </section>
 <p id="status" role="status" aria-live="polite"></p>
 <iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>

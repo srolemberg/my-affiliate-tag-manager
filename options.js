@@ -103,7 +103,7 @@ function renderTags() {
         return;
     }
 
-    for (const entry of savedTags) {
+    for (const [index, entry] of savedTags.entries()) {
         const item = document.createElement('li');
         const fields = document.createElement('div');
         fields.className = 'tag-fields';
@@ -113,14 +113,12 @@ function renderTags() {
         tagLabel.className = 'tag-key-display';
         tagLabel.textContent = chrome.i18n.getMessage('currentKeyLabel', entry.tag);
 
-        const descriptionLabel = document.createElement('label');
-        descriptionLabel.textContent =
-            chrome.i18n.getMessage(
-                'currentDescriptionLabel',
-                entry.description || chrome.i18n.getMessage('undefinedDescription'),
-            );
+        const descriptionField = document.createElement('div');
+        descriptionField.className = 'text-field';
         const descriptionInput = document.createElement('input');
+        descriptionInput.id = `tag-description-${index}`;
         descriptionInput.value = entry.description;
+        descriptionInput.placeholder = ' ';
         descriptionInput.dataset.originalDescription = entry.description;
         descriptionInput.setAttribute(
             'aria-label',
@@ -129,26 +127,38 @@ function renderTags() {
                 entry.description || entry.tag,
             ),
         );
-        descriptionLabel.append(descriptionInput);
-        const urlLabel = document.createElement('label');
-        urlLabel.className = 'tag-url-field';
-        urlLabel.textContent = chrome.i18n.getMessage('originalUrlLabel');
+        const descriptionLabel = document.createElement('label');
+        descriptionLabel.className = 'text-field-label';
+        descriptionLabel.htmlFor = descriptionInput.id;
+        descriptionLabel.textContent = chrome.i18n.getMessage('optionalDescription');
+        descriptionField.append(descriptionInput, descriptionLabel);
+
+        const urlField = document.createElement('div');
+        urlField.className = 'text-field tag-url-field';
         const urlInput = document.createElement('input');
+        urlInput.id = `tag-url-${index}`;
         urlInput.className = 'tag-url-input';
         urlInput.type = 'url';
         urlInput.required = true;
         urlInput.value = entry.url;
+        urlInput.placeholder = ' ';
         urlInput.dataset.originalUrl = entry.url;
         urlInput.dataset.originalTag = entry.tag;
         urlInput.setAttribute(
             'aria-label',
             chrome.i18n.getMessage('editOriginalUrlAriaLabel', entry.tag),
         );
+        urlInput.setAttribute('aria-describedby', `tag-url-error-${index}`);
+        const urlLabel = document.createElement('label');
+        urlLabel.className = 'text-field-label';
+        urlLabel.htmlFor = urlInput.id;
+        urlLabel.textContent = chrome.i18n.getMessage('originalUrlLabel');
         const urlError = document.createElement('output');
         urlError.className = 'tag-url-error';
+        urlError.id = `tag-url-error-${index}`;
         urlError.setAttribute('aria-live', 'polite');
-        urlLabel.append(urlInput, urlError);
-        fields.append(tagLabel, descriptionLabel, urlLabel);
+        urlField.append(urlInput, urlLabel, urlError);
+        fields.append(tagLabel, descriptionField, urlField);
 
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
@@ -170,6 +180,12 @@ function renderTags() {
             }
         });
         item.append(fields, deleteButton);
+        if (index < savedTags.length - 1) {
+            const divider = document.createElement('hr');
+            divider.className = 'm3-divider';
+            divider.setAttribute('aria-hidden', 'true');
+            item.append(divider);
+        }
         tagList.append(item);
     }
 
@@ -248,7 +264,7 @@ function updateSaveButtonState() {
     for (const [index, input] of urlInputs.entries()) {
         const error = getTagUrlValidationMessage(errors[index]);
         const errorElement = input
-            .closest('label')
+            .closest('.text-field')
             ?.querySelector('.tag-url-error');
         if (!errorElement) {
             console.error('Could not find the validation message for a tag URL.');
@@ -316,6 +332,11 @@ function updateAddFormState() {
     const validationError = getAddFormUrlValidationError(url);
     addButton.disabled = Boolean(validationError);
     addError.textContent = url ? getTagUrlValidationMessage(validationError) : '';
+    if (url && validationError) {
+        newUrlInput.setAttribute('aria-invalid', 'true');
+    } else {
+        newUrlInput.removeAttribute('aria-invalid');
+    }
 }
 
 /** Loads and selects the stored theme preference. */

@@ -43,6 +43,46 @@ test('loads the extension and exercises basic options and popup flows', {
         assert.equal(manifest.action.default_popup, 'popup.html');
         await optionsPage.waitForSelector('#add-form');
         assert.equal(
+            await optionsPage.$eval('#add-form', (form) => (
+                form.querySelector('.add-card-header h2[data-i18n="manualAddHeading"]') !== null &&
+                form.querySelector('.add-card-header p[data-i18n="optionsIntro"]')?.textContent.trim() ===
+                    'As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador.' &&
+                form.querySelector('.add-card-footer #add-button') !== null &&
+                form.querySelectorAll('.text-field-label').length === 2
+            )),
+            true,
+            'places the title, supporting text, floating labels, and primary action in the add card',
+        );
+        assert.equal(
+            await optionsPage.$eval('#import-card', (card) => (
+                card.querySelector('.import-card-header h2[data-i18n="importCardHeading"]') !== null &&
+                card.querySelector('.import-card-content label[for="import-file"]') !== null &&
+                card.querySelector('input[type="file"]#import-file') !== null
+            )),
+            true,
+            'groups the import heading, instructions, and file input in a card',
+        );
+        assert.equal(
+            await optionsPage.$eval('#import-file', (input) => (
+                getComputedStyle(input, '::file-selector-button').borderRadius === '20px' &&
+                getComputedStyle(input, '::file-selector-button').minHeight === '40px'
+            )),
+            true,
+            'styles the file chooser as a Material outlined button',
+        );
+        assert.equal(
+            await optionsPage.$eval('#saved-tags-card', (card) => (
+                card.querySelector('.saved-tags-header h2[data-i18n="savedTagsHeading"]') !== null &&
+                card.querySelector('.saved-tags-content #tag-list') !== null &&
+                [...card.querySelector('.toolbar').querySelectorAll('button')]
+                    .map((button) => button.id)
+                    .join(',') === 'save-tags-button,export-button,delete-all-button' &&
+                getComputedStyle(card.querySelector('.toolbar')).flexWrap === 'wrap'
+            )),
+            true,
+            'places the saved tag list and management actions in the card body and footer',
+        );
+        assert.equal(
             await optionsPage.$eval(
                 '.options-app-bar h1',
                 (heading) => heading.textContent.trim(),
@@ -171,10 +211,30 @@ test('loads the extension and exercises basic options and popup flows', {
             true,
             'rejects a tag URL outside supported Amazon domains',
         );
+        assert.equal(
+            await optionsPage.$eval('#new-url', (input) => (
+                input.getAttribute('aria-invalid') === 'true'
+            )),
+            true,
+            'marks an invalid URL field for assistive technology',
+        );
+        assert.equal(
+            await optionsPage.$eval('#add-error', (error) => error.textContent.length > 0),
+            true,
+            'shows the localized validation error below the URL field',
+        );
 
         await optionsPage.locator('#new-description').fill('Puppeteer smoke test');
         await optionsPage.locator('#new-url').fill(
             'https://www.amazon.com/dp/example?tag=puppeteer-check-20',
+        );
+        assert.equal(
+            await optionsPage.$eval('#new-url', (input) => (
+                input.getAttribute('aria-invalid') === null &&
+                getComputedStyle(input.nextElementSibling).fontSize === '12px'
+            )),
+            true,
+            'clears the invalid state and floats the URL label after valid input',
         );
         assert.equal(
             await optionsPage.$eval('#add-button', (button) => button.disabled),
@@ -183,6 +243,55 @@ test('loads the extension and exercises basic options and popup flows', {
         await optionsPage.$eval('#add-form', (form) => form.requestSubmit());
         await optionsPage.waitForSelector(
             '#tag-list li[data-original-tag="puppeteer-check-20"]',
+        );
+        assert.equal(
+            await optionsPage.$eval(
+                '#tag-list li[data-original-tag="puppeteer-check-20"]',
+                (item) => {
+                    const descriptionInput = item.querySelector('#tag-description-0');
+                    const descriptionLabel = descriptionInput?.nextElementSibling;
+                    const urlInput = item.querySelector('#tag-url-0');
+                    const urlLabel = urlInput?.nextElementSibling;
+                    return descriptionInput?.parentElement.classList.contains('text-field') &&
+                        descriptionLabel?.htmlFor === descriptionInput.id &&
+                        descriptionLabel?.classList.contains('text-field-label') &&
+                        getComputedStyle(descriptionLabel).fontSize === '12px' &&
+                        urlInput?.parentElement.classList.contains('text-field') &&
+                        urlLabel?.htmlFor === urlInput.id &&
+                        urlLabel?.classList.contains('text-field-label');
+                },
+            ),
+            true,
+            'renders saved description and URL editors as Material floating-label textfields',
+        );
+        await optionsPage.evaluate(async () => {
+            const {savedTags} = await chrome.storage.local.get('savedTags');
+            await chrome.storage.local.set({
+                savedTags: [...savedTags, {
+                    tag: 'separator-check-20',
+                    description: 'Separator test',
+                    url: 'https://www.amazon.com/dp/example?tag=separator-check-20',
+                }],
+            });
+        });
+        await optionsPage.waitForFunction(
+            () => document.querySelectorAll('#tag-list li[data-original-tag]').length === 2,
+        );
+        assert.equal(
+            await optionsPage.$eval('#tag-list', (list) => {
+                const dividers = [...list.querySelectorAll('.m3-divider')];
+                const colorSample = document.createElement('span');
+                colorSample.style.backgroundColor = 'var(--md-sys-color-outline-variant)';
+                document.body.append(colorSample);
+                const expectedColor = getComputedStyle(colorSample).backgroundColor;
+                colorSample.remove();
+                return dividers.length === 1 &&
+                    dividers[0].getAttribute('aria-hidden') === 'true' &&
+                    getComputedStyle(dividers[0]).height === '2px' &&
+                    getComputedStyle(dividers[0]).backgroundColor === expectedColor;
+            }),
+            true,
+            'separates saved entries with the Material divider color and dimensions',
         );
         await optionsPage.evaluate(async () => {
             await chrome.storage.local.set({
