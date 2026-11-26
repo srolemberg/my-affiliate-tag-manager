@@ -5,20 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-11-26
+
+### Added
+
+- Automated checks for missing localization keys and placeholders, plus
+  untranslated static text in the extension pages.
+- Made browser-driven localization tests set Chromium's Linux UI language for
+  each locale so CI exercises the intended message catalog.
+
+### Changed
+
+- Corrected Portuguese terminology for the toolbar indicator and updated the
+  privacy help text to point to the project link in Settings.
+- Clarified localization and command-scope guidance for maintainers.
+- Corrected terminology in the changelog and removed a misplaced footer item
+  from the README tag-management list.
+
 ## [0.3.0] - 2026-11-26
 
 ### Added
 
 - Supporting descriptions below saved tag keys when a description is present.
-- App-bar actions for rating the extension and viewing the project, plus a
-  report-problems action in the footer.
+- App-bar actions for rating the extension and viewing the project, plus an
+  issue-reporting action in the footer.
 - A linked availability badge image in the README.
 
 ### Changed
 
 - Refined the options, popup, and footer layouts to follow Material 3 surfaces,
   typography, spacing, and icon-action patterns.
-- Changed the options app bar to identify the Configurações screen, and added
+- Changed the options app bar to identify the Settings screen, and added
   localized tooltips for the rating, project, and report actions.
 - Made the footer a centered version app bar with a report-problems icon, and
   constrained its width to the options content on wider screens.

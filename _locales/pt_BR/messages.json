@@ -279,7 +279,7 @@
     "message": "Não foi possível salvar as tags encontradas:"
   },
   "updateBadgeError": {
-    "message": "Não foi possível atualizar o badge da extensão:"
+    "message": "Não foi possível atualizar o indicador da extensão:"
   },
   "getActiveTabError": {
     "message": "Não foi possível obter a aba ativa:"
@@ -390,7 +390,7 @@
     "message": "A notificação não se aplica a este domínio."
   },
   "badgeLegendTitle": {
-    "message": "Sobre o ícone de notificação"
+    "message": "Sobre o indicador de notificação"
   },
   "badgeLegendValid": {
     "message": "Na aba ativa, a URL contém uma chave salva igual à última acessada."
@@ -417,7 +417,7 @@
     "message": "A tag de afiliado não precisa permanecer visível na barra de endereços durante a navegação: a Amazon pode armazená-la em um cookie que rastreia compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL."
   },
   "howItWorksPrivacy": {
-    "message": "A extensão não coleta nem envia dados. As chaves e URLs são gerenciadas localmente no navegador, sem conexão com serviços externos; abrir uma URL salva exige conexão com o site. Você pode consultar o código-fonte pelo link no nome do autor, no rodapé da extensão."
+    "message": "A extensão não coleta nem envia dados. As chaves e URLs são gerenciadas localmente no navegador, sem conexão com serviços externos; abrir uma URL salva exige conexão com o site. Você pode consultar o código-fonte pelo ícone “Conheça o projeto” na barra superior da tela Configurações."
   },
   "privacyHeading": {
     "message": "Privacidade e dados"

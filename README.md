@@ -46,7 +46,6 @@ On the options page, you can:
 - Delete an individual tag after confirmation.
 - Delete all tags after two confirmations.
 - Import a JSON file or export the current list.
-- Shows the extension version centered and a report-problems icon in the shared bottom app bar.
 
 After a supported Amazon page's main-frame navigation completes, its tag and full URL are saved. The global last-access record is updated for a completed navigation or when a saved URL is opened from the popup. Switching focus to an already open tab does not update access time. Existing per-tag access timestamps are consolidated to the latest one when migrating stored data. The global access record is shown only in the popup and is not included in exports. Tag keys remain unique. Existing records without a saved URL remain compatible; a later completed navigation can populate it, or it can be entered in tag management.
 

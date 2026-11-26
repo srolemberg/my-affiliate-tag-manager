@@ -417,7 +417,7 @@
     "message": "The affiliate tag does not need to remain visible in the address bar while browsing: Amazon may store it in a cookie that tracks purchases for the next 24 hours, even if the parameter disappears from the URL."
   },
   "howItWorksPrivacy": {
-    "message": "The extension does not collect or send data. Keys and URLs are managed locally in your browser without connecting to external services; opening a saved URL requires a connection to that website. You can view the source code through the link on the author's name in the extension footer."
+    "message": "The extension does not collect or send data. Keys and URLs are managed locally in your browser without connecting to external services; opening a saved URL requires a connection to that website. You can view the source code using the “Explore the project” icon in the Settings app bar."
   },
   "privacyHeading": {
     "message": "Privacy and data"

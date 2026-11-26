@@ -40,6 +40,33 @@ async function getUnlocalizedMarkup(page) {
                 }
             }
         }
+        // These nodes receive localized/data-driven text or protocol-defined symbols.
+        const dynamicTextSelectors = [
+            '#footer-label',
+            '#status',
+            '#add-error',
+            '#new-tag-preview',
+            '#last-access-avatar',
+            '#last-access-title',
+            '#last-access-subtitle',
+            '#saved-tag-menu',
+            '#tag-list',
+            '.badge-legend-symbol',
+        ];
+        const textWalker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+        );
+        while (textWalker.nextNode()) {
+            const textNode = textWalker.currentNode;
+            const text = textNode.textContent.trim();
+            const parent = textNode.parentElement;
+            if (!text || !parent || parent.closest('script,style,svg,[data-i18n]') ||
+                dynamicTextSelectors.some((selector) => parent.closest(selector))) {
+                continue;
+            }
+            mismatches.push(`unmarked-text:${parent.tagName.toLowerCase()}:${text}`);
+        }
         return mismatches;
     });
 }
@@ -53,11 +80,17 @@ test('should render the options and popup flows in every available locale', {
 });
 
 async function runExtensionFlow(locale) {
+    const browserLanguage = locale.replace('_', '-');
     const browser = await puppeteer.launch({
         headless: true,
+        env: {
+            ...process.env,
+            // Chromium on Linux derives its UI locale from LANGUAGE.
+            LANGUAGE: locale,
+        },
         args: [
             '--no-sandbox',
-            `--lang=${locale.replace('_', '-')}`,
+            `--lang=${browserLanguage}`,
             `--disable-extensions-except=${extensionPath}`,
             `--load-extension=${extensionPath}`,
         ],
@@ -153,6 +186,11 @@ async function runExtensionFlow(locale) {
         ));
         assert.ok(footerFrame, 'loads the shared footer app bar');
         await footerFrame.waitForSelector('#footer-label');
+        assert.deepEqual(
+            await getUnlocalizedMarkup(footerFrame),
+            [],
+            'renders localized footer text and accessibility labels for the selected catalog',
+        );
         const originalViewport = optionsPage.viewport();
         const footerWidth = Math.min(720, originalViewport.width);
         const footerSideInset = (originalViewport.width - footerWidth) / 2;
@@ -784,15 +822,34 @@ async function runExtensionFlow(locale) {
             'openCurrentTabButton',
             'openNewTabButton',
             'settingsTooltip',
+            'badgeLegendTitle',
             'badgeLegendValid',
             'badgeLegendDifferent',
             'badgeLegendInvalid',
             'badgeLegendHidden',
+            'howItWorksPrivacy',
+            'projectLinkTooltip',
         ]);
         assert.deepEqual(
             await getUnlocalizedMarkup(popupPage),
             [],
             'renders localized popup text and accessibility labels for the selected catalog',
+        );
+        assert.equal(
+            await popupPage.$eval('.m3-accordion:nth-child(2) .m3-list-item-label', (label) => (
+                label.textContent.trim()
+            )),
+            popupMessages.badgeLegendTitle,
+            'shows the localized toolbar-indicator heading',
+        );
+        const privacyHelpText = await popupPage.$eval(
+            '.m3-accordion:nth-child(3) .m3-accordion-content p[data-i18n="howItWorksPrivacy"]',
+            (paragraph) => paragraph.textContent,
+        );
+        assert.ok(
+            privacyHelpText.includes(popupMessages.projectLinkTooltip) &&
+                !/author|autor|footer|rodapé/i.test(privacyHelpText),
+            'points to the localized project action in settings instead of the removed footer author link',
         );
         assert.match(
             await popupPage.evaluate(() => document.documentElement.className),
