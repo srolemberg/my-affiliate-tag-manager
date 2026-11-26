@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-11-26
+
+### Added
+
+- Supporting descriptions below saved tag keys when a description is present.
+- App-bar actions for rating the extension and viewing the project, plus a
+  report-problems action in the footer.
+- A linked availability badge image in the README.
+
+### Changed
+
+- Refined the options, popup, and footer layouts to follow Material 3 surfaces,
+  typography, spacing, and icon-action patterns.
+- Changed the options app bar to identify the Configurações screen, and added
+  localized tooltips for the rating, project, and report actions.
+- Made the footer a centered version app bar with a report-problems icon, and
+  constrained its width to the options content on wider screens.
+- Expanded the popup menu, accordion rows, and dividers to the available content
+  width; accordion sections continue to open and close without animation.
+- Expanded visual, localization, and unit coverage for the updated interface and
+  optional saved-tag descriptions. Updated shared agent guidance for scenario
+  coverage and Material 3 hierarchy.
+
 ## [0.2.0] - 2026-11-26
 
 ### Added
