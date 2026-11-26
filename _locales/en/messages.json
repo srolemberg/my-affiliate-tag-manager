@@ -33,10 +33,13 @@
     "message": "Select a valid tag."
   },
   "optionsIntro": {
-    "message": "Tags found in Amazon URLs are automatically saved in this browser."
+    "message": "Add a tag manually by entering its original Amazon URL; the tag key is extracted automatically."
   },
   "themePreferenceHeading": {
     "message": "Application theme"
+  },
+  "themePreferenceIntro": {
+    "message": "Choose the theme used on the extension pages."
   },
   "themeSystem": {
     "message": "System"

@@ -89,7 +89,7 @@ async function mutateTags(operation) {
 }
 
 /**
- * Renders saved records, their editable fields, and available actions.
+ * Renders saved keys, optional supporting descriptions, editable fields, and actions.
  */
 function renderTags() {
     tagList.replaceChildren();
@@ -117,6 +117,15 @@ function renderTags() {
         const tagLabel = document.createElement('h3');
         tagLabel.className = 'tag-key-display';
         tagLabel.textContent = entry.tag;
+        const tagHeading = document.createElement('div');
+        tagHeading.className = 'saved-tag-heading';
+        tagHeading.append(tagLabel);
+        if (entry.description) {
+            const descriptionText = document.createElement('p');
+            descriptionText.className = 'saved-tag-supporting-text';
+            descriptionText.textContent = entry.description;
+            tagHeading.append(descriptionText);
+        }
 
         const descriptionField = document.createElement('div');
         descriptionField.className = 'text-field';
@@ -164,7 +173,7 @@ function renderTags() {
         urlError.setAttribute('aria-live', 'polite');
         urlField.append(urlInput, urlLabel, urlError);
         fields.append(descriptionField, urlField);
-        content.append(tagLabel, fields);
+        content.append(tagHeading, fields);
 
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';

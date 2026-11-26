@@ -8,7 +8,7 @@
     <style>
         body {
             box-sizing: border-box;
-            font: 16px Arial, sans-serif;
+            font: 16px/24px Roboto, Arial, sans-serif;
             margin: 0 auto 32px;
             max-width: 720px;
             padding: 0 16px 52px;
@@ -22,22 +22,19 @@
 
         .options-app-bar h1 {
             color: var(--md-sys-color-on-surface);
-            font-size: 20px;
-            font-weight: 500;
+            font-size: 22px;
+            font-weight: 400;
+            line-height: 28px;
             margin: 0;
         }
 
-        #theme-card {
-            background: var(--md-sys-color-surface-container-low);
-            border: 0;
-            border-radius: 12px;
-            box-sizing: border-box;
-            box-shadow:
-                0 1px 2px rgb(0 0 0 / 15%),
-                0 1px 3px rgb(0 0 0 / 30%);
-            margin: 0 0 16px;
-            padding: 12px 16px;
-            width: 100%;
+        .theme-card-header {
+            padding: 20px 16px 12px;
+        }
+
+        .theme-card-content {
+            background: var(--md-sys-color-surface-container);
+            padding: 16px;
         }
 
         #theme-card h2 {
@@ -48,11 +45,18 @@
             margin: 0;
         }
 
+        .theme-card-supporting-text {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 14px;
+            line-height: 20px;
+            margin: 4px 0 0;
+        }
+
         .theme-options {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px 0;
-            margin-top: 12px;
+            gap: 16px 8px;
+            margin-top: 0;
             width: 100%;
         }
 
@@ -61,29 +65,33 @@
             display: flex;
             flex: 1 1 110px;
             font-size: 14px;
-            gap: 4px;
+            gap: 8px;
+            line-height: 20px;
             min-width: 0;
         }
 
         .theme-option input {
             accent-color: var(--md-sys-color-primary);
             flex: 0 0 auto;
-            height: 18px;
+            height: 20px;
             margin: 0;
             min-height: 0;
             padding: 0;
-            width: 18px;
+            width: 20px;
         }
 
+        #theme-card,
         #add-form,
         #saved-tags-card {
             background: var(--md-sys-color-surface-container-low);
             border-radius: 16px;
             box-shadow:
-                0 1px 2px rgb(0 0 0 / 15%),
-                0 1px 3px rgb(0 0 0 / 30%);
+                0 1px 2px color-mix(in srgb, var(--md-sys-color-shadow) 15%, transparent),
+                0 1px 3px color-mix(in srgb, var(--md-sys-color-shadow) 30%, transparent);
+            box-sizing: border-box;
             margin: 16px 0;
             overflow: hidden;
+            padding: 0;
             width: 100%;
         }
 
@@ -91,18 +99,22 @@
             padding: 20px 16px 12px;
         }
 
-        .saved-tags-app-bar {
+        .saved-tags-header-row {
             align-items: center;
-            background: var(--md-sys-color-surface-container);
-            box-sizing: border-box;
             display: flex;
-            min-height: 64px;
-            padding: 0 16px;
+            gap: 8px;
         }
 
-        .saved-tags-app-bar-heading {
+        .saved-tags-header-heading {
             flex: 1;
             min-width: 0;
+        }
+
+        .saved-tags-header-actions {
+            align-items: center;
+            display: flex;
+            flex: 0 0 auto;
+            gap: 4px;
         }
 
         .app-bar-action {
@@ -134,15 +146,6 @@
             color: var(--md-sys-color-on-surface);
             font-size: 22px;
             font-weight: 400;
-            line-height: 28px;
-            margin: 0;
-        }
-
-        .saved-tags-app-bar h2 {
-            color: var(--md-sys-color-on-surface);
-            font-size: 22px;
-            font-weight: 500;
-            flex: 1;
             line-height: 28px;
             margin: 0;
         }
@@ -180,7 +183,7 @@
             background: var(--md-sys-color-surface-container-low);
             display: grid;
             gap: 0 12px;
-            grid-template-columns: minmax(0, 1fr) 40px;
+            grid-template-columns: minmax(0, 1fr) 56px;
             margin: 0;
             padding: 16px;
         }
@@ -221,7 +224,19 @@
             font-size: 16px;
             font-weight: 500;
             line-height: 24px;
-            margin: 0 0 12px;
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .saved-tag-heading {
+            margin-bottom: 12px;
+        }
+
+        .saved-tag-supporting-text {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 14px;
+            line-height: 20px;
+            margin: 4px 0 0;
             overflow-wrap: anywhere;
         }
 
@@ -311,11 +326,15 @@
         }
 
         .tag-fields {
+            background: var(--md-sys-color-surface-container);
             display: grid;
-            gap: 12px;
+            gap: 16px;
+            margin: 0 -16px -16px;
+            padding: 16px 0 16px 16px;
         }
 
         .tag-fields .text-field {
+            margin-right: 16px;
             min-width: 0;
         }
 
@@ -330,6 +349,7 @@
             grid-row: 1;
             height: 40px;
             justify-content: center;
+            margin-left: 16px;
             padding: 8px;
             width: 40px;
         }
@@ -423,26 +443,31 @@
     <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
 </header>
 <section id="theme-card" role="radiogroup" aria-labelledby="theme-card-heading">
-    <h2 id="theme-card-heading" data-i18n="themePreferenceHeading">Tema da aplicação</h2>
-    <div class="theme-options">
-        <label class="theme-option" for="theme-system" data-i18n-title="themeSystemTooltip" title="Tema da aplicação: Sistema">
-            <input id="theme-system" name="theme-preference" type="radio" value="system" checked data-i18n-title="themeSystemTooltip" title="Tema da aplicação: Sistema">
-            <span data-i18n="themeSystem">Sistema</span>
-        </label>
-        <label class="theme-option" for="theme-light" data-i18n-title="themeLightTooltip" title="Tema da aplicação: Claro">
-            <input id="theme-light" name="theme-preference" type="radio" value="light" data-i18n-title="themeLightTooltip" title="Tema da aplicação: Claro">
-            <span data-i18n="themeLight">Claro</span>
-        </label>
-        <label class="theme-option" for="theme-dark" data-i18n-title="themeDarkTooltip" title="Tema da aplicação: Escuro">
-            <input id="theme-dark" name="theme-preference" type="radio" value="dark" data-i18n-title="themeDarkTooltip" title="Tema da aplicação: Escuro">
-            <span data-i18n="themeDark">Escuro</span>
-        </label>
+    <header class="theme-card-header">
+        <h2 id="theme-card-heading" data-i18n="themePreferenceHeading">Tema da aplicação</h2>
+        <p class="theme-card-supporting-text" data-i18n="themePreferenceIntro">Escolha o tema usado nas páginas da extensão.</p>
+    </header>
+    <div class="theme-card-content">
+        <div class="theme-options">
+            <label class="theme-option" for="theme-system" data-i18n-title="themeSystemTooltip" title="Tema da aplicação: Sistema">
+                <input id="theme-system" name="theme-preference" type="radio" value="system" checked data-i18n-title="themeSystemTooltip" title="Tema da aplicação: Sistema">
+                <span data-i18n="themeSystem">Sistema</span>
+            </label>
+            <label class="theme-option" for="theme-light" data-i18n-title="themeLightTooltip" title="Tema da aplicação: Claro">
+                <input id="theme-light" name="theme-preference" type="radio" value="light" data-i18n-title="themeLightTooltip" title="Tema da aplicação: Claro">
+                <span data-i18n="themeLight">Claro</span>
+            </label>
+            <label class="theme-option" for="theme-dark" data-i18n-title="themeDarkTooltip" title="Tema da aplicação: Escuro">
+                <input id="theme-dark" name="theme-preference" type="radio" value="dark" data-i18n-title="themeDarkTooltip" title="Tema da aplicação: Escuro">
+                <span data-i18n="themeDark">Escuro</span>
+            </label>
+        </div>
     </div>
 </section>
 <form id="add-form" class="add-card">
     <header class="add-card-header">
         <h2 data-i18n="manualAddHeading">Adicionar tag</h2>
-        <p data-i18n="optionsIntro">As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador.</p>
+        <p data-i18n="optionsIntro">Adicione uma tag manualmente informando a URL original da Amazon; a chave será extraída automaticamente.</p>
     </header>
     <div class="add-card-fields">
         <div class="text-field">
@@ -462,17 +487,21 @@
 </form>
 
 <section id="saved-tags-card" aria-labelledby="saved-tags-heading">
-    <header class="saved-tags-app-bar">
-        <div class="saved-tags-app-bar-heading">
-            <h2 id="saved-tags-heading" data-i18n="savedTagsHeading">Tags salvas</h2>
-            <p id="status" role="status" aria-live="polite"></p>
-        </div>
+    <header class="add-card-header saved-tags-header">
+        <div class="saved-tags-header-row">
+            <div class="saved-tags-header-heading">
+                <h2 id="saved-tags-heading" data-i18n="savedTagsHeading">Tags salvas</h2>
+                <p id="status" role="status" aria-live="polite"></p>
+            </div>
+            <div class="saved-tags-header-actions">
         <button id="import-button" class="app-bar-action" type="button" data-i18n-aria-label="importJsonLabel" data-i18n-title="importJsonLabel" title="Importar arquivo JSON (mesclar com a lista atual)">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 15V18H6V15H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V15H18ZM7 9L8.41 10.41L11 7.83V16H13V7.83L15.59 10.41L17 9L12 4L7 9Z"/></svg>
         </button>
         <button id="export-button" class="app-bar-action" type="button" data-i18n-aria-label="exportJsonButton" data-i18n-title="exportJsonButton" title="Exportar JSON">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 15V18H6V15H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V15H18ZM17 11L15.59 9.59L13 12.17V4H11V12.17L8.41 9.59L7 11L12 16L17 11Z"/></svg>
         </button>
+            </div>
+        </div>
         <input id="import-file" type="file" accept="application/json,.json" data-i18n-title="importJsonLabel" title="Importar arquivo JSON (mesclar com a lista atual)">
     </header>
     <div class="saved-tags-content">

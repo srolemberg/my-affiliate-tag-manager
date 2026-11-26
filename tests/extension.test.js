@@ -110,6 +110,7 @@ async function runExtensionFlow(locale) {
             'deleteAllButton',
             'savedTagsHeading',
             'themePreferenceHeading',
+            'themePreferenceIntro',
             'themeSystem',
             'themeLight',
             'themeDark',
@@ -141,9 +142,9 @@ async function runExtensionFlow(locale) {
         );
         assert.equal(
             await optionsPage.$eval('#saved-tags-card', (card, messages) => (
-                card.querySelector('.saved-tags-app-bar h2[data-i18n="savedTagsHeading"]')?.textContent === messages.savedTagsHeading &&
-                card.querySelector('.saved-tags-app-bar-heading #status[role="status"][aria-live="polite"]') !== null &&
-                [...card.querySelectorAll('.saved-tags-app-bar button')]
+                card.querySelector('.saved-tags-header-heading h2[data-i18n="savedTagsHeading"]')?.textContent === messages.savedTagsHeading &&
+                card.querySelector('.saved-tags-header-heading #status[role="status"][aria-live="polite"]') !== null &&
+                [...card.querySelectorAll('.saved-tags-header-actions button')]
                     .map((button) => button.id).join(',') === 'import-button,export-button' &&
                 card.querySelector('#import-button svg[aria-hidden="true"] path')?.getAttribute('d') ===
                     'M18 15V18H6V15H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V15H18ZM7 9L8.41 10.41L11 7.83V16H13V7.83L15.59 10.41L17 9L12 4L7 9Z' &&
@@ -168,7 +169,7 @@ async function runExtensionFlow(locale) {
             'places import and export actions in the app bar and keeps save and delete actions in the footer',
         );
         assert.deepEqual(
-            await optionsPage.$eval('.saved-tags-app-bar-heading #status', (status) => {
+            await optionsPage.$eval('.saved-tags-header-heading #status', (status) => {
                 const style = getComputedStyle(status);
                 return {fontSize: style.fontSize, lineHeight: style.lineHeight};
             }),
@@ -241,11 +242,15 @@ async function runExtensionFlow(locale) {
             'keeps the app bar free of supporting text',
         );
         assert.equal(
-            await optionsPage.$eval('#theme-card-heading', (heading) => (
-                heading.textContent.trim()
-            )),
-            optionsMessages.themePreferenceHeading,
-            'shows the theme control title on the card',
+            await optionsPage.$eval('#theme-card', (card) => ({
+                heading: card.querySelector('#theme-card-heading')?.textContent.trim(),
+                supportingText: card.querySelector('.theme-card-supporting-text')?.textContent.trim(),
+            })),
+            {
+                heading: optionsMessages.themePreferenceHeading,
+                supportingText: optionsMessages.themePreferenceIntro,
+            },
+            'shows the theme control title and supporting text in the selected language',
         );
         assert.deepEqual(
             await optionsPage.$$eval('.theme-option span[data-i18n]', (labels) => (

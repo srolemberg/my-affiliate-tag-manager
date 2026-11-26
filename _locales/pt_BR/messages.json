@@ -33,10 +33,13 @@
     "message": "Selecione uma tag válida."
   },
   "optionsIntro": {
-    "message": "As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador."
+    "message": "Adicione uma tag manualmente informando a URL original da Amazon; a chave será extraída automaticamente."
   },
   "themePreferenceHeading": {
     "message": "Tema da aplicação"
+  },
+  "themePreferenceIntro": {
+    "message": "Escolha o tema usado nas páginas da extensão."
   },
   "themeSystem": {
     "message": "Sistema"
