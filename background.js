@@ -355,31 +355,6 @@ async function saveDiscoveredTags(url) {
 }
 
 /**
- * Updates the badge for one tab without changing the last-access record.
- * @param {number} tabId Chrome tab identifier.
- * @returns {Promise<void>}
- */
-async function updateBadgeForTab(tabId) {
-    const requestId = ++latestUpdate;
-
-    try {
-        const tab = await chrome.tabs.get(tabId);
-        if (requestId !== latestUpdate) {
-            return;
-        }
-
-        await safelyUpdateBadge(tab?.url);
-    } catch (error) {
-        if (requestId !== latestUpdate) {
-            return;
-        }
-
-        console.error(chrome.i18n.getMessage('getActiveTabError'), error);
-        await safelyUpdateBadge(undefined);
-    }
-}
-
-/**
  * Finds the active tab in the focused window and updates its badge.
  * @returns {Promise<void>}
  */
@@ -408,8 +383,15 @@ async function updateBadgeForActiveTab() {
 }
 
 /** Refreshes the badge after a tab becomes active. */
-chrome.tabs.onActivated.addListener(({tabId}) => {
-    return updateBadgeForTab(tabId);
+chrome.tabs.onActivated.addListener(() => {
+    return updateBadgeForActiveTab();
+});
+
+/** Refreshes the badge when focus moves between browser windows. */
+chrome.windows.onFocusChanged.addListener((windowId) => {
+    if (windowId !== chrome.windows.WINDOW_ID_NONE) {
+        return updateBadgeForActiveTab();
+    }
 });
 
 /** Records a tag only after the main-frame navigation completes successfully. */

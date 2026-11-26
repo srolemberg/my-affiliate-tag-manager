@@ -106,6 +106,10 @@ function createBackgroundHarness(initialStorage = {}) {
                 return [];
             },
         },
+        windows: {
+            WINDOW_ID_NONE: -1,
+            onFocusChanged: createEvent(),
+        },
         webNavigation: {
             onCompleted: createEvent(),
         },
@@ -344,6 +348,40 @@ test('stores one last-access record only after main-frame navigation completes',
     assert.notEqual(storage.lastAccessedTag.lastAccessed, previousAccess);
     assert.equal(storage.lastAccessedTag.tag, 'account-20');
     assert.ok(Date.parse(storage.lastAccessedTag.lastAccessed));
+});
+
+test('tracks the active tab in the focused window when tabs or window focus changes', async () => {
+    const activeUrl = 'https://www.amazon.com/?tag=active-20';
+    const backgroundWindowUrl = 'https://www.amazon.com/?tag=background-20';
+    const {badgeCalls, chrome} = createBackgroundHarness({
+        savedTags: [
+            {tag: 'active-20', url: activeUrl},
+            {tag: 'background-20', url: backgroundWindowUrl},
+        ],
+        lastAccessedTag: {
+            tag: 'active-20',
+            lastAccessed: new Date().toISOString(),
+        },
+    });
+    let focusedWindowUrl = activeUrl;
+    chrome.tabs.query = async (queryInfo) => {
+        assert.equal(queryInfo.active, true);
+        assert.equal(queryInfo.lastFocusedWindow, true);
+        return [{url: focusedWindowUrl}];
+    };
+    chrome.tabs.get = async () => ({url: backgroundWindowUrl});
+
+    await chrome.tabs.onActivated.listener({tabId: 7, windowId: 2});
+    assertBadgeState(badgeCalls, 'valid');
+
+    badgeCalls.length = 0;
+    focusedWindowUrl = backgroundWindowUrl;
+    await chrome.windows.onFocusChanged.listener(2);
+    assertBadgeState(badgeCalls, 'different');
+
+    badgeCalls.length = 0;
+    await chrome.windows.onFocusChanged.listener(chrome.windows.WINDOW_ID_NONE);
+    assert.deepEqual(badgeCalls, [], 'keeps the last browser-window badge when focus leaves Chrome');
 });
 
 test('rejects duplicate edits without changing stored tags', async () => {
