@@ -45,6 +45,7 @@ function createOptionsHarness(locale, {
     failThemeRead = false,
     failThemeWrite = false,
     themePreference = 'system',
+    initialSavedTags = [],
 } = {}) {
     const messages = JSON.parse(
         fs.readFileSync(path.join(root, '_locales', locale, 'messages.json'), 'utf8'),
@@ -72,7 +73,15 @@ function createOptionsHarness(locale, {
         console: {error() {}},
         document: {
             getElementById(id) { return elements.get(id) || null; },
-            createElement() { return {dataset: {}, setAttribute() {}, append() {}}; },
+            createElement(tagName) {
+                return {
+                    tagName: tagName.toUpperCase(),
+                    dataset: {},
+                    setAttribute() {},
+                    append() {},
+                    click() {},
+                };
+            },
         },
         chrome: {
             i18n: {
@@ -90,7 +99,7 @@ function createOptionsHarness(locale, {
                     async get(key) {
                         if (key === 'savedTags') {
                             if (failSavedTagsRead) throw new Error('storage unavailable');
-                            return {savedTags: []};
+                            return {savedTags: initialSavedTags};
                         }
                         if (failThemeRead) throw new Error('storage unavailable');
                         return {themePreference};
@@ -101,12 +110,18 @@ function createOptionsHarness(locale, {
                 },
             },
         },
-        normalizeTagEntries: () => [],
+        normalizeTagEntries: (entries) => entries ?? [],
         getTagFromAmazonUrl: () => '',
         isValidAmazonTagUrl: () => false,
         getErrorMessage: (error) => error.message,
         window: {confirm: () => true},
-        URL,
+        URL: {
+            createObjectURL(blob) {
+                context.exportBlob = blob;
+                return 'blob:options-export-test';
+            },
+            revokeObjectURL() {},
+        },
         Blob,
         setTimeout,
     });
@@ -115,7 +130,7 @@ function createOptionsHarness(locale, {
         context,
         {filename: 'options.js'},
     );
-    return {elements, storageChanged};
+    return {elements, storageChanged, context};
 }
 
 async function waitForStatus(status) {
@@ -241,6 +256,40 @@ describe('extension interface behavior', () => {
         elements.get('import-button').listeners.click();
 
         assert.equal(elements.get('import-file').clickCount, 1);
+    });
+
+    test('should export saved tags without theme preferences and show localized feedback in every locale', async () => {
+        const localeDirectory = path.join(root, '_locales');
+        const locales = fs.readdirSync(localeDirectory, {withFileTypes: true})
+            .filter((entry) => entry.isDirectory() &&
+                fs.existsSync(path.join(localeDirectory, entry.name, 'messages.json')))
+            .map((entry) => entry.name);
+        const initialSavedTags = [{
+            tag: 'sample-20',
+            description: 'Sample description',
+            url: 'https://www.amazon.com/dp/example?tag=sample-20',
+        }];
+
+        for (const locale of locales) {
+            const {elements, context} = createOptionsHarness(locale, {initialSavedTags});
+            await new Promise((resolve) => setImmediate(resolve));
+            elements.get('export-button').listeners.click();
+            const exportedJson = await context.exportBlob.text();
+            const messages = JSON.parse(fs.readFileSync(
+                path.join(localeDirectory, locale, 'messages.json'), 'utf8',
+            ));
+
+            assert.deepEqual(
+                JSON.parse(exportedJson),
+                {version: 1, tags: initialSavedTags},
+                `${locale} exports the versioned tag data without preferences`,
+            );
+            assert.equal(
+                elements.get('status').textContent,
+                messages.exportedJson.message,
+                `${locale} confirms the export to the user`,
+            );
+        }
     });
 
     test('should show the localized theme loading error when local storage rejects the preference read in every locale', async () => {

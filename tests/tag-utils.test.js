@@ -36,6 +36,23 @@ describe('saved tag records, Amazon URLs, and badge rules', () => {
         );
     });
 
+    test('should keep optional saved-tag descriptions trimmed or empty for card supporting text', () => {
+        const result = utilities.normalizeTagEntries([
+            {tag: 'described-20', description: '  Product note  '},
+            {tag: 'blank-20', description: '   '},
+            {tag: 'missing-20'},
+        ]);
+
+        assert.deepEqual(
+            JSON.parse(JSON.stringify(result.map(({tag, description}) => ({tag, description})))),
+            [
+                {tag: 'described-20', description: 'Product note'},
+                {tag: 'blank-20', description: ''},
+                {tag: 'missing-20', description: ''},
+            ],
+        );
+    });
+
     test('should select the latest legacy access timestamp when migrating saved records', () => {
         assert.deepEqual(
             JSON.parse(JSON.stringify(utilities.getLatestAccessRecord([

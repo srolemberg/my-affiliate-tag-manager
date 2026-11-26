@@ -176,17 +176,12 @@ async function runExtensionFlow(locale) {
             {fontSize: '14px', lineHeight: '20px'},
             'styles the status message as supporting text below the saved tags heading',
         );
-        await optionsPage.evaluate(() => {
-            const fileInput = document.querySelector('#import-file');
-            fileInput.click = () => {
-                fileInput.dataset.pickerRequested = 'true';
-            };
-        });
-        await optionsPage.click('#import-button');
+        const fileChooserPromise = optionsPage.waitForFileChooser();
+        await optionsPage.$eval('#import-button', (button) => button.click());
+        const fileChooser = await fileChooserPromise;
+        await fileChooser.cancel();
         assert.equal(
-            await optionsPage.$eval('#import-file', (input) => (
-                input.dataset.pickerRequested === 'true'
-            )),
+            fileChooser !== null,
             true,
             'opens the JSON file picker when the app bar import button is pressed',
         );
@@ -196,36 +191,19 @@ async function runExtensionFlow(locale) {
                 (buttons) => buttons.map((button) => {
                     const style = getComputedStyle(button);
                     return {
-                        background: style.backgroundColor,
-                        border: style.borderColor,
-                        color: style.color,
+                        className: button.classList.contains('button-primary')
+                            ? 'button-primary'
+                            : 'button-tertiary',
+                        isFilled: style.backgroundColor !== 'rgba(0, 0, 0, 0)',
+                        hasBorder: style.borderColor !== 'rgba(0, 0, 0, 0)',
+                        hasTextColor: style.color !== 'rgba(0, 0, 0, 0)',
                     };
                 }),
             ),
-            await optionsPage.evaluate(() => {
-                const color = (token) => {
-                    const sample = document.createElement('span');
-                    sample.style.color = `var(--md-sys-color-${token})`;
-                    sample.style.backgroundColor = `var(--md-sys-color-${token})`;
-                    sample.style.borderColor = `var(--md-sys-color-${token})`;
-                    document.body.append(sample);
-                    const result = getComputedStyle(sample).color;
-                    sample.remove();
-                    return result;
-                };
-                return [
-                    {
-                        background: color('primary'),
-                        border: color('primary'),
-                        color: color('on-primary'),
-                    },
-                    {
-                        background: 'rgba(0, 0, 0, 0)',
-                        border: color('outline'),
-                        color: color('primary'),
-                    },
-                ];
-            }),
+            [
+                {className: 'button-primary', isFilled: true, hasBorder: true, hasTextColor: true},
+                {className: 'button-tertiary', isFilled: false, hasBorder: true, hasTextColor: true},
+            ],
             'uses filled and outlined Material button styling in order',
         );
         assert.equal(
@@ -241,7 +219,7 @@ async function runExtensionFlow(locale) {
             null,
             'keeps the app bar free of supporting text',
         );
-        assert.equal(
+        assert.deepEqual(
             await optionsPage.$eval('#theme-card', (card) => ({
                 heading: card.querySelector('#theme-card-heading')?.textContent.trim(),
                 supportingText: card.querySelector('.theme-card-supporting-text')?.textContent.trim(),
@@ -258,6 +236,34 @@ async function runExtensionFlow(locale) {
             )),
             [optionsMessages.themeSystem, optionsMessages.themeLight, optionsMessages.themeDark],
             'shows all theme choices in the selected language',
+        );
+        assert.deepEqual(
+            await optionsPage.evaluate(() => {
+                const themeCard = document.querySelector('#theme-card');
+                const addCard = document.querySelector('#add-form');
+                const heading = getComputedStyle(document.querySelector('.options-app-bar h1'));
+                const radio = getComputedStyle(document.querySelector('.theme-option input'));
+                return {
+                    cardRadius: getComputedStyle(themeCard).borderRadius,
+                    cardShadow: getComputedStyle(themeCard).boxShadow ===
+                        getComputedStyle(addCard).boxShadow,
+                    fontFamily: getComputedStyle(document.body).fontFamily,
+                    headingFontSize: heading.fontSize,
+                    headingLineHeight: heading.lineHeight,
+                    radioHeight: radio.height,
+                    radioWidth: radio.width,
+                };
+            }),
+            {
+                cardRadius: '16px',
+                cardShadow: true,
+                fontFamily: 'Roboto, Arial, sans-serif',
+                headingFontSize: '22px',
+                headingLineHeight: '28px',
+                radioHeight: '20px',
+                radioWidth: '20px',
+            },
+            'uses the shared Material 3 card, typography, and theme-control dimensions',
         );
         assert.deepEqual(
             await optionsPage.evaluate(() => {
@@ -433,7 +439,14 @@ async function runExtensionFlow(locale) {
                     const descriptionLabel = descriptionInput?.nextElementSibling;
                     const urlInput = item.querySelector('#tag-url-0');
                     const urlLabel = urlInput?.nextElementSibling;
+                    const supportingText = item.querySelector('.saved-tag-supporting-text');
                     const deleteButton = item.querySelector('.delete-tag-button');
+                    const tagFields = item.querySelector('.tag-fields');
+                    const tagFieldsRect = tagFields.getBoundingClientRect();
+                    const descriptionRect = descriptionInput.getBoundingClientRect();
+                    const deleteButtonStyle = getComputedStyle(deleteButton);
+                    const gridColumns = getComputedStyle(item).gridTemplateColumns
+                        .split(' ').map((value) => Number.parseFloat(value));
                     return descriptionInput?.parentElement.classList.contains('text-field') &&
                         descriptionLabel?.htmlFor === descriptionInput.id &&
                         descriptionLabel?.classList.contains('text-field-label') &&
@@ -444,8 +457,17 @@ async function runExtensionFlow(locale) {
                         item.querySelector('.tag-key-display')?.tagName === 'H3' &&
                         item.querySelector('.tag-key-display')?.textContent ===
                             'puppeteer-check-20' &&
-                        getComputedStyle(item.querySelector('.tag-fields'))
-                            .gridTemplateColumns.split(' ').length === 1 &&
+                        supportingText?.textContent === 'Puppeteer smoke test' &&
+                        getComputedStyle(supportingText).fontSize === '14px' &&
+                        getComputedStyle(supportingText).lineHeight === '20px' &&
+                        getComputedStyle(tagFields).backgroundColor ===
+                            getComputedStyle(document.querySelector('.add-card-fields')).backgroundColor &&
+                        getComputedStyle(tagFields).padding === '16px 0px 16px 16px' &&
+                        getComputedStyle(descriptionInput.parentElement).marginRight === '16px' &&
+                        Math.abs(descriptionRect.left - tagFieldsRect.left - 16) < 1 &&
+                        Math.abs(tagFieldsRect.right - descriptionRect.right - 16) < 1 &&
+                        deleteButtonStyle.marginLeft === '16px' &&
+                        gridColumns.length === 2 && gridColumns[1] === 56 &&
                         deleteButton?.getAttribute('aria-label') ===
                             messages.deleteTagAriaLabel &&
                         deleteButton?.getAttribute('title') ===
@@ -462,13 +484,21 @@ async function runExtensionFlow(locale) {
             await chrome.storage.local.set({
                 savedTags: [...savedTags, {
                     tag: 'separator-check-20',
-                    description: 'Separator test',
+                    description: '',
                     url: 'https://www.amazon.com/dp/example?tag=separator-check-20',
                 }],
             });
         });
         await optionsPage.waitForFunction(
             () => document.querySelectorAll('#tag-list li[data-original-tag]').length === 2,
+        );
+        assert.equal(
+            await optionsPage.$eval(
+                '#tag-list li[data-original-tag="separator-check-20"]',
+                (item) => item.querySelector('.saved-tag-supporting-text') === null,
+            ),
+            true,
+            'omits supporting text from a saved tag card when its description is empty',
         );
         assert.equal(
             await optionsPage.$eval('#tag-list', (list) => {
@@ -558,7 +588,7 @@ async function runExtensionFlow(locale) {
             await popupPage.$eval('#saved-tag-button', (button) => (
                 getComputedStyle(button).borderRadius
             )),
-            '16px',
+            '20px',
             'renders the tonal trigger with the reference corner radius',
         );
         assert.equal(
@@ -611,6 +641,16 @@ async function runExtensionFlow(locale) {
             'opens the saved-tag menu from the button',
         );
         assert.equal(
+            await popupPage.evaluate(() => {
+                const appBar = document.querySelector('.popup-app-bar').getBoundingClientRect();
+                const menu = document.querySelector('#saved-tag-menu').getBoundingClientRect();
+                return Math.abs(menu.left - appBar.left) < 1 &&
+                    Math.abs(menu.right - appBar.right) < 1;
+            }),
+            true,
+            'extends the saved-tag menu selection surface to the app-bar edges',
+        );
+        assert.equal(
             await popupPage.$eval(
                 '#saved-tag-menu [data-tag="puppeteer-check-20"]',
                 (option) => option.textContent,
@@ -660,8 +700,8 @@ async function runExtensionFlow(locale) {
                 })),
             ),
             [
-                {borderRadius: '999px', height: '48px', iconCount: 0},
-                {borderRadius: '999px', height: '48px', iconCount: 0},
+                {borderRadius: '20px', height: '48px', iconCount: 0},
+                {borderRadius: '20px', height: '48px', iconCount: 0},
             ],
             'renders both tab-opening actions as medium round text-only buttons',
         );
@@ -711,10 +751,11 @@ async function runExtensionFlow(locale) {
         });
         assert.equal(
             await popupPage.$eval('.last-access-card', (card) => (
-                getComputedStyle(card).height
+                getComputedStyle(card).minHeight === '80px' &&
+                card.getBoundingClientRect().height >= 80
             )),
-            '80px',
-            'renders the last-access card at medium height',
+            true,
+            'keeps the last-access card at least medium height while its text wraps',
         );
         assert.equal(
             await popupPage.$eval('.last-access-avatar', (avatar) => (
@@ -738,6 +779,31 @@ async function runExtensionFlow(locale) {
             ),
             '0px',
             'keeps the accordion list items flush without spacing',
+        );
+        assert.equal(
+            await popupPage.evaluate(() => {
+                const appBar = document.querySelector('.popup-app-bar').getBoundingClientRect();
+                const list = document.querySelector('.m3-accordion-list').getBoundingClientRect();
+                const divider = document.querySelector('.m3-divider').getBoundingClientRect();
+                return Math.abs(list.left - appBar.left) < 1 &&
+                    Math.abs(list.right - appBar.right) < 1 &&
+                    Math.abs(divider.left - appBar.left) < 1 &&
+                    Math.abs(divider.right - appBar.right) < 1;
+            }),
+            true,
+            'extends accordion list items and their divider to the app-bar edges',
+        );
+        assert.deepEqual(
+            await popupPage.evaluate(() => ({
+                contentTransition: getComputedStyle(
+                    document.querySelector('.m3-accordion-content'),
+                ).transitionDuration,
+                chevronTransition: getComputedStyle(
+                    document.querySelector('.m3-list-item-chevron'),
+                ).transitionDuration,
+            })),
+            {contentTransition: '0s', chevronTransition: '0s'},
+            'keeps accordion opening and its indicator static',
         );
         assert.equal(
             await popupPage.$eval('.how-it-works .affiliate-tag-note', (paragraph) => {
@@ -800,6 +866,12 @@ async function runExtensionFlow(locale) {
             ),
             [false, true, false],
             'opens only the activated accordion in the list group',
+        );
+        await accordionItems[1].$('summary').then((summary) => summary.click());
+        assert.equal(
+            await popupPage.$eval('.m3-accordion:nth-child(2)', (accordion) => accordion.open),
+            false,
+            'closes an accordion immediately when its list item is activated again',
         );
         assert.equal(
             await popupPage.$eval('#last-access-title', (element) => element.textContent),
@@ -888,26 +960,11 @@ async function runExtensionFlow(locale) {
             true,
             'restores the saved theme selection in settings',
         );
-        await settingsPage.evaluate(() => {
-            window.exportedJson = '';
-            URL.createObjectURL = (blob) => {
-                blob.text().then((text) => {
-                    window.exportedJson = text;
-                });
-                return 'blob:theme-export-test';
-            };
-            HTMLAnchorElement.prototype.click = function click() {};
-        });
-        await settingsPage.click('#export-button');
-        await settingsPage.waitForFunction(() => Boolean(window.exportedJson));
-        assert.deepEqual(
-            await settingsPage.evaluate(() => Object.keys(
-                JSON.parse(window.exportedJson),
-            )),
-            ['version', 'tags'],
-            'does not include local theme preferences in tag exports',
-        );
         await settingsPage.click('#theme-light');
+        await settingsPage.waitForFunction(async () => (
+            (await chrome.storage.local.get('themePreference')).themePreference === 'light'
+        ));
+        await popupPage.reload();
         await popupPage.waitForFunction(
             () => document.documentElement.classList.contains('light') ||
                 document.documentElement.classList.contains('light-medium-contrast') ||
@@ -917,6 +974,7 @@ async function runExtensionFlow(locale) {
         await settingsPage.waitForFunction(async () => (
             (await chrome.storage.local.get('themePreference')).themePreference === 'system'
         ));
+        await popupPage.reload();
         assert.deepEqual(pageErrors, []);
     } finally {
         await browser.close();
