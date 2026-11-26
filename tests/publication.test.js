@@ -4,6 +4,13 @@ const path = require('node:path');
 const {describe, test} = require('node:test');
 
 const root = path.join(__dirname, '..');
+const localeDirectory = path.join(root, '_locales');
+const locales = fs.readdirSync(localeDirectory, {withFileTypes: true})
+    .filter((entry) => (
+        entry.isDirectory() &&
+        fs.existsSync(path.join(localeDirectory, entry.name, 'messages.json'))
+    ))
+    .map((entry) => entry.name);
 const manifest = JSON.parse(
     fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'),
 );
@@ -17,8 +24,7 @@ describe('extension permissions and privacy information', () => {
         assert.equal(manifest.permissions.includes('alarms'), true);
     });
 
-    test('should describe extension functionality in both locales when the manifest is localized', () => {
-        const locales = ['pt_BR', 'en'];
+    test('should describe extension functionality in every available locale when the manifest is localized', () => {
         for (const locale of locales) {
             const messages = JSON.parse(
                 fs.readFileSync(
@@ -29,7 +35,7 @@ describe('extension permissions and privacy information', () => {
             assert.match(messages.appName.message, /\S/, `${locale} app name`);
             assert.match(
                 messages.appDescription.message,
-                /(Amazon|tags|URLs|affiliate)/,
+                /Amazon/i,
                 `${locale} app description`,
             );
             assert.ok(

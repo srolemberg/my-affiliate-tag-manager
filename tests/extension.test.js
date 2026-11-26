@@ -1,18 +1,63 @@
 /** Smoke-tests the unpacked extension in Chromium using Puppeteer. */
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const puppeteer = require('puppeteer');
 
 const extensionPath = path.resolve(__dirname, '..');
+const localeDirectory = path.join(extensionPath, '_locales');
+const availableLocales = fs.readdirSync(localeDirectory, {withFileTypes: true})
+    .filter((entry) => (
+        entry.isDirectory() &&
+        fs.existsSync(path.join(localeDirectory, entry.name, 'messages.json'))
+    ))
+    .map((entry) => entry.name);
 
-test('should render the options and popup flows when the extension loads', {
-    timeout: 60000,
+async function getLocalizedMessages(page, keys, substitutions = {}) {
+    return page.evaluate(({messageKeys, values}) => Object.fromEntries(
+        messageKeys.map((key) => [key, chrome.i18n.getMessage(key, values[key])]),
+    ), {messageKeys: keys, values: substitutions});
+}
+
+async function getUnlocalizedMarkup(page) {
+    return page.evaluate(() => {
+        const mismatches = [];
+        for (const element of document.querySelectorAll('[data-i18n]')) {
+            const expected = chrome.i18n.getMessage(element.dataset.i18n);
+            if (expected && element.textContent.trim() !== expected) {
+                mismatches.push(`text:${element.dataset.i18n}`);
+            }
+        }
+        for (const [selector, datasetKey, attribute] of [
+            ['[data-i18n-title]', 'i18nTitle', 'title'],
+            ['[data-i18n-aria-label]', 'i18nAriaLabel', 'aria-label'],
+        ]) {
+            for (const element of document.querySelectorAll(selector)) {
+                const expected = chrome.i18n.getMessage(element.dataset[datasetKey]);
+                if (expected && element.getAttribute(attribute) !== expected) {
+                    mismatches.push(`${attribute}:${element.dataset[datasetKey]}`);
+                }
+            }
+        }
+        return mismatches;
+    });
+}
+
+test('should render the options and popup flows in every available locale', {
+    timeout: 120000,
 }, async () => {
+    for (const locale of availableLocales) {
+        await runExtensionFlow(locale);
+    }
+});
+
+async function runExtensionFlow(locale) {
     const browser = await puppeteer.launch({
         headless: true,
         args: [
             '--no-sandbox',
+            `--lang=${locale.replace('_', '-')}`,
             `--disable-extensions-except=${extensionPath}`,
             `--load-extension=${extensionPath}`,
         ],
@@ -35,6 +80,15 @@ test('should render the options and popup flows when the extension loads', {
             {waitUntil: 'domcontentloaded'},
         );
 
+        const uiLocale = await optionsPage.evaluate(
+            () => chrome.i18n.getUILanguage(),
+        );
+        assert.equal(
+            uiLocale.split(/[-_]/)[0].toLowerCase(),
+            locale.split(/[-_]/)[0].toLowerCase(),
+            `uses the ${locale} message catalog during this browser run`,
+        );
+
         const manifest = await optionsPage.evaluate(
             () => chrome.runtime.getManifest(),
         );
@@ -45,29 +99,58 @@ test('should render the options and popup flows when the extension loads', {
         await optionsPage.waitForFunction(
             () => getComputedStyle(document.querySelector('#save-tags-button')).backgroundColor !== 'rgba(0, 0, 0, 0)',
         );
+        const optionsMessages = await getLocalizedMessages(optionsPage, [
+            'appName',
+            'optionsIntro',
+            'manualAddHeading',
+            'addButton',
+            'importJsonLabel',
+            'exportJsonButton',
+            'saveChangesButton',
+            'deleteAllButton',
+            'savedTagsHeading',
+            'themePreferenceHeading',
+            'themeSystem',
+            'themeLight',
+            'themeDark',
+            'themeSystemTooltip',
+            'themeLightTooltip',
+            'themeDarkTooltip',
+            'optionalDescription',
+            'originalUrlLabel',
+            'deleteTagAriaLabel',
+            'deleteTagTooltip',
+        ], {
+            deleteTagAriaLabel: 'puppeteer-check-20',
+            deleteTagTooltip: 'puppeteer-check-20',
+        });
+        assert.deepEqual(
+            await getUnlocalizedMarkup(optionsPage),
+            [],
+            'renders localized option-page text and accessibility labels for the selected catalog',
+        );
         assert.equal(
-            await optionsPage.$eval('#add-form', (form) => (
-                form.querySelector('.add-card-header h2[data-i18n="manualAddHeading"]') !== null &&
-                form.querySelector('.add-card-header p[data-i18n="optionsIntro"]')?.textContent.trim() ===
-                    'As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador.' &&
-                form.querySelector('.add-card-footer #add-button')?.getAttribute('title') === 'Adicionar' &&
+            await optionsPage.$eval('#add-form', (form, messages) => (
+                form.querySelector('.add-card-header h2[data-i18n="manualAddHeading"]')?.textContent === messages.manualAddHeading &&
+                form.querySelector('.add-card-header p[data-i18n="optionsIntro"]')?.textContent.trim() === messages.optionsIntro &&
+                form.querySelector('.add-card-footer #add-button')?.getAttribute('title') === messages.addButton &&
                 form.querySelectorAll('.text-field-label').length === 2
-            )),
+            ), optionsMessages),
             true,
             'places the title, supporting text, floating labels, and primary action with tooltip in the add card',
         );
         assert.equal(
-            await optionsPage.$eval('#saved-tags-card', (card) => (
-                card.querySelector('.saved-tags-app-bar h2[data-i18n="savedTagsHeading"]') !== null &&
+            await optionsPage.$eval('#saved-tags-card', (card, messages) => (
+                card.querySelector('.saved-tags-app-bar h2[data-i18n="savedTagsHeading"]')?.textContent === messages.savedTagsHeading &&
                 card.querySelector('.saved-tags-app-bar-heading #status[role="status"][aria-live="polite"]') !== null &&
                 [...card.querySelectorAll('.saved-tags-app-bar button')]
                     .map((button) => button.id).join(',') === 'import-button,export-button' &&
                 card.querySelector('#import-button svg[aria-hidden="true"] path')?.getAttribute('d') ===
                     'M18 15V18H6V15H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V15H18ZM7 9L8.41 10.41L11 7.83V16H13V7.83L15.59 10.41L17 9L12 4L7 9Z' &&
-                card.querySelector('#import-button')?.getAttribute('aria-label') === 'Importar arquivo JSON (mesclar com a lista atual)' &&
+                card.querySelector('#import-button')?.getAttribute('aria-label') === messages.importJsonLabel &&
                 card.querySelector('#export-button svg[aria-hidden="true"] path')?.getAttribute('d') ===
                     'M18 15V18H6V15H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V15H18ZM17 11L15.59 9.59L13 12.17V4H11V12.17L8.41 9.59L7 11L12 16L17 11Z' &&
-                card.querySelector('#export-button')?.getAttribute('aria-label') === 'Exportar JSON' &&
+                card.querySelector('#export-button')?.getAttribute('aria-label') === messages.exportJsonButton &&
                 card.querySelector('#import-file')?.getAttribute('accept') === 'application/json,.json' &&
                 getComputedStyle(card.querySelector('#import-file')).display === 'none' &&
                 card.querySelector('.saved-tags-content #tag-list') !== null &&
@@ -76,11 +159,11 @@ test('should render the options and popup flows when the extension loads', {
                     .map((button) => button.id)
                     .join(',') === 'save-tags-button,delete-all-button' &&
                 card.querySelector('#save-tags-button').classList.contains('button-primary') &&
-                card.querySelector('#save-tags-button')?.getAttribute('title') === 'Salvar alterações' &&
+                card.querySelector('#save-tags-button')?.getAttribute('title') === messages.saveChangesButton &&
                 card.querySelector('#delete-all-button').classList.contains('button-tertiary') &&
-                card.querySelector('#delete-all-button')?.getAttribute('title') === 'Excluir todas' &&
+                card.querySelector('#delete-all-button')?.getAttribute('title') === messages.deleteAllButton &&
                 getComputedStyle(card.querySelector('.toolbar')).flexWrap === 'wrap'
-            )),
+            ), optionsMessages),
             true,
             'places import and export actions in the app bar and keeps save and delete actions in the footer',
         );
@@ -149,7 +232,7 @@ test('should render the options and popup flows when the extension loads', {
                 '.options-app-bar h1',
                 (heading) => heading.textContent.trim(),
             ),
-            'Minhas Tags de Afiliado',
+            optionsMessages.appName,
             'uses the app name as the options-page app-bar title',
         );
         assert.equal(
@@ -161,8 +244,15 @@ test('should render the options and popup flows when the extension loads', {
             await optionsPage.$eval('#theme-card-heading', (heading) => (
                 heading.textContent.trim()
             )),
-            'Tema da aplicação',
+            optionsMessages.themePreferenceHeading,
             'shows the theme control title on the card',
+        );
+        assert.deepEqual(
+            await optionsPage.$$eval('.theme-option span[data-i18n]', (labels) => (
+                labels.map((label) => label.textContent.trim())
+            )),
+            [optionsMessages.themeSystem, optionsMessages.themeLight, optionsMessages.themeDark],
+            'shows all theme choices in the selected language',
         );
         assert.deepEqual(
             await optionsPage.evaluate(() => {
@@ -240,9 +330,9 @@ test('should render the options and popup flows when the extension loads', {
                 })),
             ),
             [
-                {checked: true, title: 'Tema da aplicação: Sistema', value: 'system'},
-                {checked: false, title: 'Tema da aplicação: Claro', value: 'light'},
-                {checked: false, title: 'Tema da aplicação: Escuro', value: 'dark'},
+                {checked: true, title: optionsMessages.themeSystemTooltip, value: 'system'},
+                {checked: false, title: optionsMessages.themeLightTooltip, value: 'light'},
+                {checked: false, title: optionsMessages.themeDarkTooltip, value: 'dark'},
             ],
             'defaults to the system theme preference with contextualized tooltips',
         );
@@ -333,7 +423,7 @@ test('should render the options and popup flows when the extension loads', {
         assert.equal(
             await optionsPage.$eval(
                 '#tag-list li[data-original-tag="puppeteer-check-20"]',
-                (item) => {
+                (item, messages) => {
                     const descriptionInput = item.querySelector('#tag-description-0');
                     const descriptionLabel = descriptionInput?.nextElementSibling;
                     const urlInput = item.querySelector('#tag-url-0');
@@ -352,11 +442,12 @@ test('should render the options and popup flows when the extension loads', {
                         getComputedStyle(item.querySelector('.tag-fields'))
                             .gridTemplateColumns.split(' ').length === 1 &&
                         deleteButton?.getAttribute('aria-label') ===
-                            'Excluir tag puppeteer-check-20' &&
+                            messages.deleteTagAriaLabel &&
                         deleteButton?.getAttribute('title') ===
-                            'Excluir tag puppeteer-check-20' &&
+                            messages.deleteTagTooltip &&
                         deleteButton.querySelector('svg[aria-hidden="true"]') !== null;
                 },
+                optionsMessages,
             ),
             true,
             'renders saved items as stacked textfields with a key heading, tooltip, and delete icon',
@@ -430,6 +521,22 @@ test('should render the options and popup flows when the extension loads', {
         await popupPage.waitForSelector(
             '#saved-tag-menu [data-tag="puppeteer-check-20"]',
         );
+        const popupMessages = await getLocalizedMessages(popupPage, [
+            'appName',
+            'selectTag',
+            'openCurrentTabButton',
+            'openNewTabButton',
+            'settingsTooltip',
+            'badgeLegendValid',
+            'badgeLegendDifferent',
+            'badgeLegendInvalid',
+            'badgeLegendHidden',
+        ]);
+        assert.deepEqual(
+            await getUnlocalizedMarkup(popupPage),
+            [],
+            'renders localized popup text and accessibility labels for the selected catalog',
+        );
         assert.match(
             await popupPage.evaluate(() => document.documentElement.className),
             /^dark/,
@@ -464,12 +571,12 @@ test('should render the options and popup flows when the extension loads', {
                 '#saved-tag-button-label',
                 (label) => label.textContent,
             ),
-            'Selecione uma tag',
+            popupMessages.selectTag,
             'shows the default selection prompt on the button',
         );
         assert.equal(
             await popupPage.$eval('#saved-tag-button', (button) => button.title),
-            'Selecione uma tag',
+            popupMessages.selectTag,
             'provides a tooltip for the saved-tag picker',
         );
         assert.deepEqual(
@@ -477,7 +584,7 @@ test('should render the options and popup flows when the extension loads', {
                 '.open-buttons button',
                 (buttons) => buttons.map((button) => button.title),
             ),
-            ['Abrir na aba atual', 'Abrir em nova aba'],
+            [popupMessages.openCurrentTabButton, popupMessages.openNewTabButton],
             'provides a tooltip for each URL-opening button',
         );
         const tagButtonWidth = await popupPage.$eval(
@@ -699,9 +806,15 @@ test('should render the options and popup flows when the extension loads', {
             'P',
             'uses the saved description initial for the avatar',
         );
-        assert.match(
+        const expectedLastAccessSubtitle = await popupPage.evaluate(() => {
+            const accessedDate = new Date('2026-11-25T12:34:56.000Z');
+            const date = new Intl.DateTimeFormat(undefined, {dateStyle: 'short'}).format(accessedDate);
+            const time = new Intl.DateTimeFormat(undefined, {timeStyle: 'medium'}).format(accessedDate);
+            return chrome.i18n.getMessage('lastAccessedDetails', [date, time]);
+        });
+        assert.equal(
             await popupPage.$eval('#last-access-subtitle', (element) => element.textContent),
-            /Last accessed:|Último acesso:/,
+            expectedLastAccessSubtitle,
             'shows localized last-access details in the card subtitle',
         );
         const badgeLegendCodePoints = await popupPage.$$eval(
@@ -711,9 +824,9 @@ test('should render the options and popup flows when the extension loads', {
         assert.equal(
             await popupPage.$eval(
                 '.popup-app-bar h1',
-                (heading) => heading.textContent.trim().length > 0,
+                (heading) => heading.textContent.trim(),
             ),
-            true,
+            popupMessages.appName,
             'renders the app title in the app bar',
         );
         assert.equal(await popupPage.$('#open-settings-button') !== null, true);
@@ -722,7 +835,7 @@ test('should render the options and popup flows when the extension loads', {
                 '#open-settings-button',
                 (button) => button.title,
             ),
-            'Configurações',
+            popupMessages.settingsTooltip,
             'provides the localized settings tooltip',
         );
         assert.equal(await popupPage.$('#manage-tags-link'), null);
@@ -736,20 +849,18 @@ test('should render the options and popup flows when the extension loads', {
             [0x2713, 0x0021, 0x2717],
             'popup legend must render the exact success, alert, and error code points',
         );
-        assert.match(
-            await popupPage.$eval(
-                '.badge-legend [data-i18n="badgeLegendHidden"]',
-                (item) => item.textContent,
+        assert.deepEqual(
+            await popupPage.$$eval(
+                '.badge-legend [data-i18n^="badgeLegend"]',
+                (items) => items.map((item) => item.textContent.trim()),
             ),
-            /^(O ícone não é exibido.*URL da aba ativa|The icon is not displayed.*active tab's URL)\.$/i,
-            'explains when the notification icon is not displayed',
-        );
-        assert.equal(
-            await popupPage.$$eval('.badge-legend li', (items) => (
-                items.every((item) => /aba ativa|active tab/i.test(item.textContent))
-            )),
-            true,
-            'describes every notification state in terms of the active tab',
+            [
+                popupMessages.badgeLegendValid,
+                popupMessages.badgeLegendDifferent,
+                popupMessages.badgeLegendInvalid,
+                popupMessages.badgeLegendHidden,
+            ],
+            'shows badge explanations from the selected locale for the active tab',
         );
         assert.deepEqual(
             await popupPage.$$eval(
@@ -805,4 +916,4 @@ test('should render the options and popup flows when the extension loads', {
     } finally {
         await browser.close();
     }
-});
+}
