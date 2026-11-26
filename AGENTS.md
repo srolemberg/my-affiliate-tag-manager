@@ -13,7 +13,7 @@ This root-level file is the single source of repository instructions for all cod
 - `tag-utils.js` provides shared normalization, merging, Amazon URL parsing, and tag validation. Its static supported-store allowlist is checked against `amazon_store_domains.json` by unit tests; the source service worker loads it using `importScripts()`, and the popup/options pages load it using script tags.
 - `i18n.js` applies localized text and aria labels to marked HTML elements and formats thrown values for UI errors.
 - Messages are stored in `_locales/pt_BR/messages.json` and `_locales/en/messages.json`. The default language is set by `default_locale` in `manifest.json`.
-- Tests use Node.js's built-in test runner and are located in `tests/`.
+- Tests use Node.js's built-in test runner and are located in `tests/`. Use `frontend-test-conventions.md` as the project reference for test observability: name and structure tests around user-visible outcomes and feedback, their triggers and preconditions, state changes, and relevant asynchronous or error behavior. Adapt its guidance to the existing `node:test` suite rather than introducing framework-specific APIs.
 
 ## Policy compliance reference
 

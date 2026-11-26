@@ -6,7 +6,7 @@ const puppeteer = require('puppeteer');
 
 const extensionPath = path.resolve(__dirname, '..');
 
-test('loads the extension and exercises basic options and popup flows', {
+test('should render the options and popup flows when the extension loads', {
     timeout: 60000,
 }, async () => {
     const browser = await puppeteer.launch({
@@ -62,9 +62,11 @@ test('loads the extension and exercises basic options and popup flows', {
                 card.querySelector('.saved-tags-app-bar-heading #status[role="status"][aria-live="polite"]') !== null &&
                 [...card.querySelectorAll('.saved-tags-app-bar button')]
                     .map((button) => button.id).join(',') === 'import-button,export-button' &&
-                card.querySelector('#import-button svg') !== null &&
+                card.querySelector('#import-button svg[aria-hidden="true"] path')?.getAttribute('d') ===
+                    'M18 15V18H6V15H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V15H18ZM7 9L8.41 10.41L11 7.83V16H13V7.83L15.59 10.41L17 9L12 4L7 9Z' &&
                 card.querySelector('#import-button')?.getAttribute('aria-label') === 'Importar arquivo JSON (mesclar com a lista atual)' &&
-                card.querySelector('#export-button svg') !== null &&
+                card.querySelector('#export-button svg[aria-hidden="true"] path')?.getAttribute('d') ===
+                    'M18 15V18H6V15H4V18C4 19.1 4.9 20 6 20H18C19.1 20 20 19.1 20 18V15H18ZM17 11L15.59 9.59L13 12.17V4H11V12.17L8.41 9.59L7 11L12 16L17 11Z' &&
                 card.querySelector('#export-button')?.getAttribute('aria-label') === 'Exportar JSON' &&
                 card.querySelector('#import-file')?.getAttribute('accept') === 'application/json,.json' &&
                 getComputedStyle(card.querySelector('#import-file')).display === 'none' &&
@@ -81,6 +83,28 @@ test('loads the extension and exercises basic options and popup flows', {
             )),
             true,
             'places import and export actions in the app bar and keeps save and delete actions in the footer',
+        );
+        assert.deepEqual(
+            await optionsPage.$eval('.saved-tags-app-bar-heading #status', (status) => {
+                const style = getComputedStyle(status);
+                return {fontSize: style.fontSize, lineHeight: style.lineHeight};
+            }),
+            {fontSize: '14px', lineHeight: '20px'},
+            'styles the status message as supporting text below the saved tags heading',
+        );
+        await optionsPage.evaluate(() => {
+            const fileInput = document.querySelector('#import-file');
+            fileInput.click = () => {
+                fileInput.dataset.pickerRequested = 'true';
+            };
+        });
+        await optionsPage.click('#import-button');
+        assert.equal(
+            await optionsPage.$eval('#import-file', (input) => (
+                input.dataset.pickerRequested === 'true'
+            )),
+            true,
+            'opens the JSON file picker when the app bar import button is pressed',
         );
         assert.deepEqual(
             await optionsPage.$$eval(
@@ -139,6 +163,29 @@ test('loads the extension and exercises basic options and popup flows', {
             )),
             'Tema da aplicação',
             'shows the theme control title on the card',
+        );
+        assert.deepEqual(
+            await optionsPage.evaluate(() => {
+                const themeHeading = getComputedStyle(
+                    document.querySelector('#theme-card-heading'),
+                );
+                const addHeading = getComputedStyle(
+                    document.querySelector('.add-card-header h2'),
+                );
+                return {
+                    themeFontSize: themeHeading.fontSize,
+                    addFontSize: addHeading.fontSize,
+                    themeLineHeight: themeHeading.lineHeight,
+                    addLineHeight: addHeading.lineHeight,
+                };
+            }),
+            {
+                themeFontSize: '22px',
+                addFontSize: '22px',
+                themeLineHeight: '28px',
+                addLineHeight: '28px',
+            },
+            'matches the theme card heading size to the add card heading',
         );
         assert.equal(
             await optionsPage.$eval('#theme-card', (card) => (
