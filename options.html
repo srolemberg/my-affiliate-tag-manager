@@ -7,10 +7,71 @@
     <link rel="stylesheet" href="M3/css/app.css">
     <style>
         body {
+            box-sizing: border-box;
             font: 16px Arial, sans-serif;
-            margin: 32px auto;
+            margin: 0 auto 32px;
             max-width: 720px;
             padding: 0 16px 52px;
+        }
+
+        .options-app-bar {
+            background: var(--md-sys-color-surface-container);
+            margin: 0 -16px 16px;
+            padding: 16px;
+        }
+
+        .options-app-bar h1 {
+            color: var(--md-sys-color-on-surface);
+            font-size: 20px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        #theme-card {
+            background: var(--md-sys-color-surface-container-low);
+            border: 0;
+            border-radius: 12px;
+            box-sizing: border-box;
+            box-shadow:
+                0 1px 2px rgb(0 0 0 / 15%),
+                0 1px 3px rgb(0 0 0 / 30%);
+            margin: 0 0 16px;
+            padding: 12px 16px;
+            width: 100%;
+        }
+
+        #theme-card h2 {
+            color: var(--md-sys-color-on-surface);
+            font-size: 16px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .theme-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 0;
+            margin-top: 12px;
+            width: 100%;
+        }
+
+        .theme-option {
+            align-items: center;
+            display: flex;
+            flex: 1 1 110px;
+            font-size: 14px;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .theme-option input {
+            accent-color: var(--md-sys-color-primary);
+            flex: 0 0 auto;
+            height: 18px;
+            margin: 0;
+            min-height: 0;
+            padding: 0;
+            width: 18px;
         }
 
         #add-form {
@@ -92,7 +153,26 @@
     </style>
 </head>
 <body>
-<h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
+<header class="options-app-bar">
+    <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
+</header>
+<section id="theme-card" role="radiogroup" aria-labelledby="theme-card-heading">
+    <h2 id="theme-card-heading" data-i18n="themePreferenceHeading">Tema da aplicação</h2>
+    <div class="theme-options">
+        <label class="theme-option" for="theme-system">
+            <input id="theme-system" name="theme-preference" type="radio" value="system" checked>
+            <span data-i18n="themeSystem">Sistema</span>
+        </label>
+        <label class="theme-option" for="theme-light">
+            <input id="theme-light" name="theme-preference" type="radio" value="light">
+            <span data-i18n="themeLight">Claro</span>
+        </label>
+        <label class="theme-option" for="theme-dark">
+            <input id="theme-dark" name="theme-preference" type="radio" value="dark">
+            <span data-i18n="themeDark">Escuro</span>
+        </label>
+    </div>
+</section>
 <p data-i18n="optionsIntro">As tags encontradas nas URLs da Amazon são salvas automaticamente neste navegador.</p>
 
 <form id="add-form">

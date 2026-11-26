@@ -42,6 +42,92 @@ test('loads the extension and exercises basic options and popup flows', {
         assert.equal(manifest.background.service_worker, 'background.js');
         assert.equal(manifest.action.default_popup, 'popup.html');
         await optionsPage.waitForSelector('#add-form');
+        assert.equal(
+            await optionsPage.$eval(
+                '.options-app-bar h1',
+                (heading) => heading.textContent.trim(),
+            ),
+            'Minhas Tags de Afiliado',
+            'uses the app name as the options-page app-bar title',
+        );
+        assert.equal(
+            await optionsPage.$('.options-app-bar p'),
+            null,
+            'keeps the app bar free of supporting text',
+        );
+        assert.equal(
+            await optionsPage.$eval('#theme-card-heading', (heading) => (
+                heading.textContent.trim()
+            )),
+            'Tema da aplicação',
+            'shows the theme control title on the card',
+        );
+        assert.equal(
+            await optionsPage.$eval('#theme-card', (card) => (
+                card.querySelector('img, svg, .avatar') === null
+            )),
+            true,
+            'does not add an avatar to the theme card',
+        );
+        assert.equal(
+            await optionsPage.$eval('.theme-options', (options) => (
+                getComputedStyle(options).display
+            )),
+            'flex',
+            'lays out the theme radio options horizontally',
+        );
+        assert.equal(
+            await optionsPage.evaluate(() => {
+                const card = document.querySelector('#theme-card');
+                const options = document.querySelector('.theme-options');
+                return Math.abs(
+                    options.getBoundingClientRect().width -
+                    (card.clientWidth - 32),
+                ) <= 1;
+            }),
+            true,
+            'stretches the radio row across the theme card content width',
+        );
+        await optionsPage.setViewport({width: 260, height: 900});
+        assert.equal(
+            await optionsPage.evaluate(() => {
+                const row = document.querySelector('.theme-options');
+                const labels = [...row.querySelectorAll('.theme-option')];
+                const rowRect = row.getBoundingClientRect();
+                return row.scrollWidth <= row.clientWidth &&
+                    labels.every((label) => {
+                        const rect = label.getBoundingClientRect();
+                        return rect.left >= rowRect.left &&
+                            rect.right <= rowRect.right;
+                    });
+            }),
+            true,
+            'wraps theme choices within the card at narrow zoomed widths',
+        );
+        await optionsPage.setViewport({width: 800, height: 600});
+        assert.deepEqual(
+            await optionsPage.$$eval(
+                '#theme-card input[type="radio"]',
+                (inputs) => inputs.map((input) => ({
+                    checked: input.checked,
+                    value: input.value,
+                })),
+            ),
+            [
+                {checked: true, value: 'system'},
+                {checked: false, value: 'light'},
+                {checked: false, value: 'dark'},
+            ],
+            'defaults to the system theme preference',
+        );
+        assert.equal(
+            await optionsPage.evaluate(() => (
+                document.querySelector('#theme-card').getBoundingClientRect().width ===
+                document.querySelector('#add-form').getBoundingClientRect().width
+            )),
+            true,
+            'stretches the theme card across the available content width',
+        );
         assert.match(
             await optionsPage.evaluate(() => document.documentElement.className),
             /^(light|dark)(-(medium|high)-contrast)?$/,
@@ -60,6 +146,19 @@ test('loads the extension and exercises basic options and popup flows', {
             ),
             '0.15s',
             'loads Material 3 button state-layer transitions',
+        );
+        await optionsPage.click('#theme-dark');
+        await optionsPage.waitForFunction(
+            () => document.documentElement.classList.contains('dark') ||
+                document.documentElement.classList.contains('dark-medium-contrast') ||
+                document.documentElement.classList.contains('dark-high-contrast'),
+        );
+        assert.equal(
+            await optionsPage.evaluate(async () => (
+                (await chrome.storage.local.get('themePreference')).themePreference
+            )),
+            'dark',
+            'persists the selected theme locally',
         );
         assert.equal(
             await optionsPage.$eval('#add-button', (button) => button.disabled),
@@ -103,6 +202,11 @@ test('loads the extension and exercises basic options and popup flows', {
         );
         await popupPage.waitForSelector(
             '#saved-tag-menu [data-tag="puppeteer-check-20"]',
+        );
+        assert.match(
+            await popupPage.evaluate(() => document.documentElement.className),
+            /^dark/,
+            'applies the saved dark theme to the popup',
         );
         assert.equal(
             await popupPage.$('#extension-footer'),
@@ -436,6 +540,40 @@ test('loads the extension and exercises basic options and popup flows', {
         const settingsTarget = await settingsTargetPromise;
         const settingsPage = await settingsTarget.page();
         await settingsPage.waitForSelector('#add-form');
+        assert.equal(
+            await settingsPage.$eval('#theme-dark', (input) => input.checked),
+            true,
+            'restores the saved theme selection in settings',
+        );
+        await settingsPage.evaluate(() => {
+            window.exportedJson = '';
+            URL.createObjectURL = (blob) => {
+                blob.text().then((text) => {
+                    window.exportedJson = text;
+                });
+                return 'blob:theme-export-test';
+            };
+            HTMLAnchorElement.prototype.click = function click() {};
+        });
+        await settingsPage.click('#export-button');
+        await settingsPage.waitForFunction(() => Boolean(window.exportedJson));
+        assert.deepEqual(
+            await settingsPage.evaluate(() => Object.keys(
+                JSON.parse(window.exportedJson),
+            )),
+            ['version', 'tags'],
+            'does not include local theme preferences in tag exports',
+        );
+        await settingsPage.click('#theme-light');
+        await popupPage.waitForFunction(
+            () => document.documentElement.classList.contains('light') ||
+                document.documentElement.classList.contains('light-medium-contrast') ||
+                document.documentElement.classList.contains('light-high-contrast'),
+        );
+        await settingsPage.click('#theme-system');
+        await settingsPage.waitForFunction(async () => (
+            (await chrome.storage.local.get('themePreference')).themePreference === 'system'
+        ));
         assert.deepEqual(pageErrors, []);
     } finally {
         await browser.close();

@@ -15,6 +15,9 @@ const statusElement = document.getElementById('status');
 const saveTagsButton = document.getElementById('save-tags-button');
 const exportButton = document.getElementById('export-button');
 const deleteAllButton = document.getElementById('delete-all-button');
+const themeSystemInput = document.getElementById('theme-system');
+const themeLightInput = document.getElementById('theme-light');
+const themeDarkInput = document.getElementById('theme-dark');
 
 const optionsElements = {
     'tag-list': tagList,
@@ -29,8 +32,18 @@ const optionsElements = {
     'save-tags-button': saveTagsButton,
     'export-button': exportButton,
     'delete-all-button': deleteAllButton,
+    'theme-system': themeSystemInput,
+    'theme-light': themeLightInput,
+    'theme-dark': themeDarkInput,
 };
 const optionsReady = Object.values(optionsElements).every(Boolean);
+const themePreferenceInputs = [
+    themeSystemInput,
+    themeLightInput,
+    themeDarkInput,
+];
+let savedThemePreference = 'system';
+let themePreferenceRevision = 0;
 let savedTags = [];
 
 if (!optionsReady) {
@@ -305,6 +318,63 @@ function updateAddFormState() {
     addError.textContent = url ? getTagUrlValidationMessage(validationError) : '';
 }
 
+/** Loads and selects the stored theme preference. */
+function selectThemePreference(preference) {
+    savedThemePreference = ['system', 'light', 'dark'].includes(preference)
+        ? preference
+        : 'system';
+    const selectedInput = themePreferenceInputs.find(
+        (input) => input.value === savedThemePreference,
+    );
+    if (!selectedInput) {
+        throw new Error('Could not find the matching theme preference control.');
+    }
+    selectedInput.checked = true;
+}
+
+async function loadThemePreference() {
+    const revision = themePreferenceRevision;
+    try {
+        const stored = await chrome.storage.local.get('themePreference');
+        if (revision !== themePreferenceRevision) {
+            return;
+        }
+        selectThemePreference(stored?.themePreference);
+    } catch (error) {
+        statusElement.textContent = chrome.i18n.getMessage(
+            'themePreferenceLoadError',
+            getErrorMessage(error),
+        );
+    }
+}
+
+/** Persists the selected theme for every extension page. */
+themePreferenceInputs.forEach((input) => {
+    listenOnOptionsPage(input, 'change', async () => {
+        if (!input.checked) {
+            return;
+        }
+
+        themePreferenceRevision += 1;
+        try {
+            await chrome.storage.local.set({themePreference: input.value});
+            savedThemePreference = input.value;
+            statusElement.textContent = '';
+        } catch (error) {
+            const previousInput = themePreferenceInputs.find(
+                (candidate) => candidate.value === savedThemePreference,
+            );
+            if (previousInput) {
+                previousInput.checked = true;
+            }
+            statusElement.textContent = chrome.i18n.getMessage(
+                'themePreferenceSaveError',
+                getErrorMessage(error),
+            );
+        }
+    });
+});
+
 /** Validates the source URL and adds its derived key and optional description. */
 listenOnOptionsPage(addForm, 'submit', async (event) => {
     event.preventDefault();
@@ -486,7 +556,21 @@ listenOnOptionsPage(importFileInput, 'change', async () => {
 
 /** Synchronizes the page when another extension component updates storage. */
 chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (optionsReady && areaName === 'local' && changes?.savedTags) {
+    if (!optionsReady || areaName !== 'local') {
+        return;
+    }
+    if (changes?.themePreference) {
+        themePreferenceRevision += 1;
+        try {
+            selectThemePreference(changes.themePreference.newValue);
+        } catch (error) {
+            statusElement.textContent = chrome.i18n.getMessage(
+                'themePreferenceLoadError',
+                getErrorMessage(error),
+            );
+        }
+    }
+    if (changes?.savedTags) {
         savedTags = normalizeTagEntries(changes.savedTags.newValue);
         updateAddFormState();
         if (getPendingUpdates().length === 0) {
@@ -499,4 +583,5 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 
 if (optionsReady) {
     void loadTags();
+    void loadThemePreference();
 }

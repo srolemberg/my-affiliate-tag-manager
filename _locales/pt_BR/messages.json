@@ -35,6 +35,24 @@
   "optionsIntro": {
     "message": "As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador."
   },
+  "themePreferenceHeading": {
+    "message": "Tema da aplicação"
+  },
+  "themeSystem": {
+    "message": "Sistema"
+  },
+  "themeLight": {
+    "message": "Claro"
+  },
+  "themeDark": {
+    "message": "Escuro"
+  },
+  "themePreferenceLoadError": {
+    "message": "Não foi possível carregar a preferência de tema: $1"
+  },
+  "themePreferenceSaveError": {
+    "message": "Não foi possível salvar a preferência de tema: $1"
+  },
   "optionalDescription": {
     "message": "Descrição (opcional)"
   },

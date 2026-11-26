@@ -35,6 +35,24 @@
   "optionsIntro": {
     "message": "Tags found in Amazon URLs are automatically saved in this browser."
   },
+  "themePreferenceHeading": {
+    "message": "Application theme"
+  },
+  "themeSystem": {
+    "message": "System"
+  },
+  "themeLight": {
+    "message": "Light"
+  },
+  "themeDark": {
+    "message": "Dark"
+  },
+  "themePreferenceLoadError": {
+    "message": "Could not load the theme preference: $1"
+  },
+  "themePreferenceSaveError": {
+    "message": "Could not save the theme preference: $1"
+  },
   "optionalDescription": {
     "message": "Description (optional)"
   },
