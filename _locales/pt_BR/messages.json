@@ -192,7 +192,7 @@
     "message": "Esta ação é irreversível. Tem certeza de que deseja continuar?"
   },
   "allTagsDeleted": {
-    "message": "Todas as chaves foram removidas. Tags presentes em páginas da Amazon poderão ser detectadas novamente."
+    "message": "Todas as chaves foram removidas."
   },
   "deleteAllError": {
     "message": "Não foi possível excluir as chaves: $1",

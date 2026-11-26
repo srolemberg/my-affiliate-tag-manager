@@ -57,67 +57,30 @@ test('loads the extension and exercises basic options and popup flows', {
             'places the title, supporting text, floating labels, and primary action with tooltip in the add card',
         );
         assert.equal(
-            await optionsPage.$eval('#import-card', (card) => (
-                card.querySelector('.import-card-header h2[data-i18n="importCardHeading"]') !== null &&
-                card.querySelector('.import-card-content label[for="import-file"]') !== null &&
-                card.querySelector('input[type="file"]#import-file')?.getAttribute('title') ===
-                    'Importar arquivo JSON (mesclar com a lista atual)'
-            )),
-            true,
-            'groups the import heading, instructions, and file input with tooltip in a card',
-        );
-        assert.deepEqual(
-            await optionsPage.$eval('#import-file', (input) => {
-                const style = getComputedStyle(input, '::file-selector-button');
-                const sample = document.createElement('span');
-                sample.style.backgroundColor = 'var(--md-sys-color-primary)';
-                sample.style.color = 'var(--md-sys-color-on-primary)';
-                document.body.append(sample);
-                const expectedBg = getComputedStyle(sample).backgroundColor;
-                const expectedColor = getComputedStyle(sample).color;
-                sample.remove();
-                return {
-                    borderRadius: style.borderRadius,
-                    minHeight: style.minHeight,
-                    backgroundColor: style.backgroundColor,
-                    color: style.color,
-                };
-            }),
-            await optionsPage.evaluate(() => {
-                const sample = document.createElement('span');
-                sample.style.backgroundColor = 'var(--md-sys-color-primary)';
-                sample.style.color = 'var(--md-sys-color-on-primary)';
-                document.body.append(sample);
-                const expectedBg = getComputedStyle(sample).backgroundColor;
-                const expectedColor = getComputedStyle(sample).color;
-                sample.remove();
-                return {
-                    borderRadius: '20px',
-                    minHeight: '40px',
-                    backgroundColor: expectedBg,
-                    color: expectedColor,
-                };
-            }),
-            'styles the file chooser as a Material primary button',
-        );
-        assert.equal(
             await optionsPage.$eval('#saved-tags-card', (card) => (
-                card.querySelector('.saved-tags-header h2[data-i18n="savedTagsHeading"]') !== null &&
+                card.querySelector('.saved-tags-app-bar h2[data-i18n="savedTagsHeading"]') !== null &&
+                card.querySelector('.saved-tags-app-bar-heading #status[role="status"][aria-live="polite"]') !== null &&
+                [...card.querySelectorAll('.saved-tags-app-bar button')]
+                    .map((button) => button.id).join(',') === 'import-button,export-button' &&
+                card.querySelector('#import-button svg') !== null &&
+                card.querySelector('#import-button')?.getAttribute('aria-label') === 'Importar arquivo JSON (mesclar com a lista atual)' &&
+                card.querySelector('#export-button svg') !== null &&
+                card.querySelector('#export-button')?.getAttribute('aria-label') === 'Exportar JSON' &&
+                card.querySelector('#import-file')?.getAttribute('accept') === 'application/json,.json' &&
+                getComputedStyle(card.querySelector('#import-file')).display === 'none' &&
                 card.querySelector('.saved-tags-content #tag-list') !== null &&
                 getComputedStyle(card.querySelector('.saved-tags-content')).padding === '16px' &&
                 [...card.querySelector('.toolbar').querySelectorAll('button')]
                     .map((button) => button.id)
-                    .join(',') === 'save-tags-button,export-button,delete-all-button' &&
+                    .join(',') === 'save-tags-button,delete-all-button' &&
                 card.querySelector('#save-tags-button').classList.contains('button-primary') &&
                 card.querySelector('#save-tags-button')?.getAttribute('title') === 'Salvar alterações' &&
-                card.querySelector('#export-button').classList.contains('button-secondary') &&
-                card.querySelector('#export-button')?.getAttribute('title') === 'Exportar JSON' &&
                 card.querySelector('#delete-all-button').classList.contains('button-tertiary') &&
                 card.querySelector('#delete-all-button')?.getAttribute('title') === 'Excluir todas' &&
                 getComputedStyle(card.querySelector('.toolbar')).flexWrap === 'wrap'
             )),
             true,
-            'places saved tag actions in the footer with tooltips and primary, secondary, and tertiary variants',
+            'places import and export actions in the app bar and keeps save and delete actions in the footer',
         );
         assert.deepEqual(
             await optionsPage.$$eval(
@@ -149,18 +112,13 @@ test('loads the extension and exercises basic options and popup flows', {
                         color: color('on-primary'),
                     },
                     {
-                        background: color('secondary-container'),
-                        border: color('secondary-container'),
-                        color: color('on-secondary-container'),
-                    },
-                    {
                         background: 'rgba(0, 0, 0, 0)',
                         border: color('outline'),
                         color: color('primary'),
                     },
                 ];
             }),
-            'uses filled, tonal, and outlined Material button styling in order',
+            'uses filled and outlined Material button styling in order',
         );
         assert.equal(
             await optionsPage.$eval(

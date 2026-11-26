@@ -192,7 +192,7 @@
     "message": "This action cannot be undone. Are you sure you want to continue?"
   },
   "allTagsDeleted": {
-    "message": "All keys have been removed. Tags on Amazon pages may be detected again."
+    "message": "All keys have been removed."
   },
   "deleteAllError": {
     "message": "Could not delete the keys: $1",

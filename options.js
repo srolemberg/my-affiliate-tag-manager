@@ -11,6 +11,7 @@ const newTagPreview = document.getElementById('new-tag-preview');
 const addError = document.getElementById('add-error');
 const addButton = document.getElementById('add-button');
 const importFileInput = document.getElementById('import-file');
+const importButton = document.getElementById('import-button');
 const statusElement = document.getElementById('status');
 const saveTagsButton = document.getElementById('save-tags-button');
 const exportButton = document.getElementById('export-button');
@@ -28,6 +29,7 @@ const optionsElements = {
     'add-error': addError,
     'add-button': addButton,
     'import-file': importFileInput,
+    'import-button': importButton,
     status: statusElement,
     'save-tags-button': saveTagsButton,
     'export-button': exportButton,
@@ -522,6 +524,11 @@ listenOnOptionsPage(exportButton, 'click', () => {
         1000,
     );
     statusElement.textContent = chrome.i18n.getMessage('exportedJson');
+});
+
+/** Opens the JSON file picker from the import action in the app bar. */
+listenOnOptionsPage(importButton, 'click', () => {
+    importFileInput.click();
 });
 
 /** Validates a JSON file and merges its records with the saved list. */
