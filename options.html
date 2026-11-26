@@ -131,10 +131,10 @@
         }
 
         .import-card-content input[type="file"]::file-selector-button {
-            background: transparent;
-            border: 1px solid var(--md-sys-color-outline);
+            background: var(--md-sys-color-primary);
+            border: 1px solid var(--md-sys-color-primary);
             border-radius: 20px;
-            color: var(--md-sys-color-primary);
+            color: var(--md-sys-color-on-primary);
             cursor: pointer;
             font: inherit;
             margin-right: 12px;
@@ -142,19 +142,18 @@
             padding: 8px 16px;
             transition:
                 background-color 150ms ease,
-                border-color 150ms ease;
+                border-color 150ms ease,
+                box-shadow 150ms ease;
         }
 
         .import-card-content input[type="file"]::file-selector-button:hover {
-            background: var(--md-sys-color-secondary-container);
-            border-color: var(--md-sys-color-secondary-container);
-            color: var(--md-sys-color-on-secondary-container);
+            box-shadow:
+                0 1px 2px rgb(0 0 0 / 30%),
+                0 1px 3px 1px rgb(0 0 0 / 15%);
         }
 
         .import-card-content input[type="file"]::file-selector-button:active {
-            background: var(--md-sys-color-primary-container);
-            border-color: var(--md-sys-color-primary-container);
-            color: var(--md-sys-color-on-primary-container);
+            box-shadow: none;
         }
 
         .add-card-fields,
@@ -170,6 +169,7 @@
 
         #tag-list {
             background: var(--md-sys-color-surface-container-low);
+            border: 1px solid var(--md-sys-color-outline-variant);
             border-radius: 16px;
             list-style: none;
             margin: 0;
@@ -210,7 +210,7 @@
             border: 0;
             height: 2px;
             grid-column: 1 / -1;
-            margin: 16px -16px 0;
+            margin: 16px -16px -16px;
             width: calc(100% + 32px);
         }
 
@@ -419,16 +419,16 @@
 <section id="theme-card" role="radiogroup" aria-labelledby="theme-card-heading">
     <h2 id="theme-card-heading" data-i18n="themePreferenceHeading">Tema da aplicação</h2>
     <div class="theme-options">
-        <label class="theme-option" for="theme-system">
-            <input id="theme-system" name="theme-preference" type="radio" value="system" checked>
+        <label class="theme-option" for="theme-system" data-i18n-title="themeSystemTooltip" title="Tema da aplicação: Sistema">
+            <input id="theme-system" name="theme-preference" type="radio" value="system" checked data-i18n-title="themeSystemTooltip" title="Tema da aplicação: Sistema">
             <span data-i18n="themeSystem">Sistema</span>
         </label>
-        <label class="theme-option" for="theme-light">
-            <input id="theme-light" name="theme-preference" type="radio" value="light">
+        <label class="theme-option" for="theme-light" data-i18n-title="themeLightTooltip" title="Tema da aplicação: Claro">
+            <input id="theme-light" name="theme-preference" type="radio" value="light" data-i18n-title="themeLightTooltip" title="Tema da aplicação: Claro">
             <span data-i18n="themeLight">Claro</span>
         </label>
-        <label class="theme-option" for="theme-dark">
-            <input id="theme-dark" name="theme-preference" type="radio" value="dark">
+        <label class="theme-option" for="theme-dark" data-i18n-title="themeDarkTooltip" title="Tema da aplicação: Escuro">
+            <input id="theme-dark" name="theme-preference" type="radio" value="dark" data-i18n-title="themeDarkTooltip" title="Tema da aplicação: Escuro">
             <span data-i18n="themeDark">Escuro</span>
         </label>
     </div>
@@ -451,7 +451,7 @@
         <output id="new-tag-preview" aria-live="polite"></output>
     </div>
     <footer class="add-card-footer">
-        <button id="add-button" type="submit" disabled data-i18n="addButton">Adicionar</button>
+        <button id="add-button" type="submit" disabled data-i18n="addButton" data-i18n-title="addButton" title="Adicionar">Adicionar</button>
     </footer>
 </form>
 
@@ -463,9 +463,9 @@
         <ul id="tag-list"></ul>
     </div>
     <footer class="toolbar">
-        <button id="save-tags-button" class="button-primary" type="button" disabled data-i18n="saveChangesButton">Salvar alterações</button>
-        <button id="export-button" class="button-secondary" type="button" data-i18n="exportJsonButton">Exportar JSON</button>
-        <button id="delete-all-button" class="button-tertiary" type="button" disabled data-i18n="deleteAllButton">Excluir todas</button>
+        <button id="save-tags-button" class="button-primary" type="button" disabled data-i18n="saveChangesButton" data-i18n-title="saveChangesButton" title="Salvar alterações">Salvar alterações</button>
+        <button id="export-button" class="button-secondary" type="button" data-i18n="exportJsonButton" data-i18n-title="exportJsonButton" title="Exportar JSON">Exportar JSON</button>
+        <button id="delete-all-button" class="button-tertiary" type="button" disabled data-i18n="deleteAllButton" data-i18n-title="deleteAllButton" title="Excluir todas">Excluir todas</button>
     </footer>
 </section>
 
@@ -475,7 +475,7 @@
     </header>
     <div class="import-card-content">
         <label for="import-file" data-i18n="importJsonLabel">Importar arquivo JSON (mesclar com a lista atual)</label>
-        <input id="import-file" type="file" accept="application/json,.json">
+        <input id="import-file" type="file" accept="application/json,.json" data-i18n-title="importJsonLabel" title="Importar arquivo JSON (mesclar com a lista atual)">
     </div>
 </section>
 <p id="status" role="status" aria-live="polite"></p>

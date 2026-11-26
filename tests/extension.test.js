@@ -42,33 +42,63 @@ test('loads the extension and exercises basic options and popup flows', {
         assert.equal(manifest.background.service_worker, 'background.js');
         assert.equal(manifest.action.default_popup, 'popup.html');
         await optionsPage.waitForSelector('#add-form');
+        await optionsPage.waitForFunction(
+            () => getComputedStyle(document.querySelector('#save-tags-button')).backgroundColor !== 'rgba(0, 0, 0, 0)',
+        );
         assert.equal(
             await optionsPage.$eval('#add-form', (form) => (
                 form.querySelector('.add-card-header h2[data-i18n="manualAddHeading"]') !== null &&
                 form.querySelector('.add-card-header p[data-i18n="optionsIntro"]')?.textContent.trim() ===
                     'As tags encontradas em URLs da Amazon são salvas automaticamente neste navegador.' &&
-                form.querySelector('.add-card-footer #add-button') !== null &&
+                form.querySelector('.add-card-footer #add-button')?.getAttribute('title') === 'Adicionar' &&
                 form.querySelectorAll('.text-field-label').length === 2
             )),
             true,
-            'places the title, supporting text, floating labels, and primary action in the add card',
+            'places the title, supporting text, floating labels, and primary action with tooltip in the add card',
         );
         assert.equal(
             await optionsPage.$eval('#import-card', (card) => (
                 card.querySelector('.import-card-header h2[data-i18n="importCardHeading"]') !== null &&
                 card.querySelector('.import-card-content label[for="import-file"]') !== null &&
-                card.querySelector('input[type="file"]#import-file') !== null
+                card.querySelector('input[type="file"]#import-file')?.getAttribute('title') ===
+                    'Importar arquivo JSON (mesclar com a lista atual)'
             )),
             true,
-            'groups the import heading, instructions, and file input in a card',
+            'groups the import heading, instructions, and file input with tooltip in a card',
         );
-        assert.equal(
-            await optionsPage.$eval('#import-file', (input) => (
-                getComputedStyle(input, '::file-selector-button').borderRadius === '20px' &&
-                getComputedStyle(input, '::file-selector-button').minHeight === '40px'
-            )),
-            true,
-            'styles the file chooser as a Material outlined button',
+        assert.deepEqual(
+            await optionsPage.$eval('#import-file', (input) => {
+                const style = getComputedStyle(input, '::file-selector-button');
+                const sample = document.createElement('span');
+                sample.style.backgroundColor = 'var(--md-sys-color-primary)';
+                sample.style.color = 'var(--md-sys-color-on-primary)';
+                document.body.append(sample);
+                const expectedBg = getComputedStyle(sample).backgroundColor;
+                const expectedColor = getComputedStyle(sample).color;
+                sample.remove();
+                return {
+                    borderRadius: style.borderRadius,
+                    minHeight: style.minHeight,
+                    backgroundColor: style.backgroundColor,
+                    color: style.color,
+                };
+            }),
+            await optionsPage.evaluate(() => {
+                const sample = document.createElement('span');
+                sample.style.backgroundColor = 'var(--md-sys-color-primary)';
+                sample.style.color = 'var(--md-sys-color-on-primary)';
+                document.body.append(sample);
+                const expectedBg = getComputedStyle(sample).backgroundColor;
+                const expectedColor = getComputedStyle(sample).color;
+                sample.remove();
+                return {
+                    borderRadius: '20px',
+                    minHeight: '40px',
+                    backgroundColor: expectedBg,
+                    color: expectedColor,
+                };
+            }),
+            'styles the file chooser as a Material primary button',
         );
         assert.equal(
             await optionsPage.$eval('#saved-tags-card', (card) => (
@@ -79,12 +109,15 @@ test('loads the extension and exercises basic options and popup flows', {
                     .map((button) => button.id)
                     .join(',') === 'save-tags-button,export-button,delete-all-button' &&
                 card.querySelector('#save-tags-button').classList.contains('button-primary') &&
+                card.querySelector('#save-tags-button')?.getAttribute('title') === 'Salvar alterações' &&
                 card.querySelector('#export-button').classList.contains('button-secondary') &&
+                card.querySelector('#export-button')?.getAttribute('title') === 'Exportar JSON' &&
                 card.querySelector('#delete-all-button').classList.contains('button-tertiary') &&
+                card.querySelector('#delete-all-button')?.getAttribute('title') === 'Excluir todas' &&
                 getComputedStyle(card.querySelector('.toolbar')).flexWrap === 'wrap'
             )),
             true,
-            'places saved tag actions in the footer with primary, secondary, and tertiary variants',
+            'places saved tag actions in the footer with tooltips and primary, secondary, and tertiary variants',
         );
         assert.deepEqual(
             await optionsPage.$$eval(
@@ -197,15 +230,16 @@ test('loads the extension and exercises basic options and popup flows', {
                 '#theme-card input[type="radio"]',
                 (inputs) => inputs.map((input) => ({
                     checked: input.checked,
+                    title: input.title,
                     value: input.value,
                 })),
             ),
             [
-                {checked: true, value: 'system'},
-                {checked: false, value: 'light'},
-                {checked: false, value: 'dark'},
+                {checked: true, title: 'Tema da aplicação: Sistema', value: 'system'},
+                {checked: false, title: 'Tema da aplicação: Claro', value: 'light'},
+                {checked: false, title: 'Tema da aplicação: Escuro', value: 'dark'},
             ],
-            'defaults to the system theme preference',
+            'defaults to the system theme preference with contextualized tooltips',
         );
         assert.equal(
             await optionsPage.evaluate(() => (
@@ -314,11 +348,13 @@ test('loads the extension and exercises basic options and popup flows', {
                             .gridTemplateColumns.split(' ').length === 1 &&
                         deleteButton?.getAttribute('aria-label') ===
                             'Excluir tag puppeteer-check-20' &&
+                        deleteButton?.getAttribute('title') ===
+                            'Excluir tag puppeteer-check-20' &&
                         deleteButton.querySelector('svg[aria-hidden="true"]') !== null;
                 },
             ),
             true,
-            'renders saved items as stacked textfields with a key heading and delete icon',
+            'renders saved items as stacked textfields with a key heading, tooltip, and delete icon',
         );
         await optionsPage.evaluate(async () => {
             const {savedTags} = await chrome.storage.local.get('savedTags');
@@ -343,19 +379,32 @@ test('loads the extension and exercises basic options and popup flows', {
                 colorSample.remove();
                 const listRect = list.getBoundingClientRect();
                 const dividerRect = dividers[0].getBoundingClientRect();
+                const urlInputRect = list.children[0]
+                    .querySelector('.tag-url-input')
+                    .getBoundingClientRect();
+                const nextLabelRect = list.children[1]
+                    .querySelector('.tag-key-display')
+                    .getBoundingClientRect();
+                const spaceAboveDivider = dividerRect.top - urlInputRect.bottom;
+                const spaceBelowDivider = nextLabelRect.top - dividerRect.bottom;
                 return dividers.length === 1 &&
                     dividers[0].getAttribute('aria-hidden') === 'true' &&
                     getComputedStyle(dividers[0]).height === '2px' &&
                     getComputedStyle(dividers[0]).backgroundColor === expectedColor &&
+                    getComputedStyle(list).borderStyle === 'solid' &&
+                    getComputedStyle(list).borderColor === expectedColor &&
                     getComputedStyle(list.children[0]).backgroundColor ===
                         getComputedStyle(list).backgroundColor &&
-                    Math.abs(dividerRect.left - listRect.left) < 1 &&
-                    Math.abs(dividerRect.right - listRect.right) < 1 &&
+                    Math.abs(dividerRect.left - (listRect.left + list.clientLeft)) < 1 &&
+                    Math.abs(dividerRect.right - (listRect.right - list.clientLeft)) < 1 &&
+                    Math.abs(spaceAboveDivider - 16) < 1 &&
+                    Math.abs(spaceBelowDivider - 16) < 1 &&
+                    Math.abs(spaceAboveDivider - spaceBelowDivider) < 1 &&
                     getComputedStyle(list.children[0]).borderRadius === '16px 16px 0px 0px' &&
                     getComputedStyle(list.children[1]).borderRadius === '0px 0px 16px 16px';
             }),
             true,
-            'renders a continuous rounded list card with full-width Material dividers',
+            'renders an outlined continuous rounded list card with full-width Material dividers and balanced spacing',
         );
         await optionsPage.evaluate(async () => {
             await chrome.storage.local.set({

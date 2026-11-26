@@ -171,6 +171,10 @@ function renderTags() {
             'aria-label',
             chrome.i18n.getMessage('deleteTagAriaLabel', entry.tag),
         );
+        deleteButton.setAttribute(
+            'title',
+            chrome.i18n.getMessage('deleteTagTooltip', entry.tag),
+        );
         const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         deleteIcon.setAttribute('aria-hidden', 'true');
         deleteIcon.setAttribute('viewBox', '0 0 24 24');

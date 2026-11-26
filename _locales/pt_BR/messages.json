@@ -41,11 +41,20 @@
   "themeSystem": {
     "message": "Sistema"
   },
+  "themeSystemTooltip": {
+    "message": "Tema da aplicação: Sistema"
+  },
   "themeLight": {
     "message": "Claro"
   },
+  "themeLightTooltip": {
+    "message": "Tema da aplicação: Claro"
+  },
   "themeDark": {
     "message": "Escuro"
+  },
+  "themeDarkTooltip": {
+    "message": "Tema da aplicação: Escuro"
   },
   "themePreferenceLoadError": {
     "message": "Não foi possível carregar a preferência de tema: $1"
@@ -120,6 +129,14 @@
     "message": "Excluir"
   },
   "deleteTagAriaLabel": {
+    "message": "Excluir tag $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "deleteTagTooltip": {
     "message": "Excluir tag $1",
     "placeholders": {
       "tag": {

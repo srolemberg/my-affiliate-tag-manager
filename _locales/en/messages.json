@@ -41,11 +41,20 @@
   "themeSystem": {
     "message": "System"
   },
+  "themeSystemTooltip": {
+    "message": "Application theme: System"
+  },
   "themeLight": {
     "message": "Light"
   },
+  "themeLightTooltip": {
+    "message": "Application theme: Light"
+  },
   "themeDark": {
     "message": "Dark"
+  },
+  "themeDarkTooltip": {
+    "message": "Application theme: Dark"
   },
   "themePreferenceLoadError": {
     "message": "Could not load the theme preference: $1"
@@ -120,6 +129,14 @@
     "message": "Delete"
   },
   "deleteTagAriaLabel": {
+    "message": "Delete tag $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
+  "deleteTagTooltip": {
     "message": "Delete tag $1",
     "placeholders": {
       "tag": {
