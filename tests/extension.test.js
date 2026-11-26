@@ -101,6 +101,10 @@ async function runExtensionFlow(locale) {
         );
         const optionsMessages = await getLocalizedMessages(optionsPage, [
             'appName',
+            'optionsScreenSupportingText',
+            'rateApp',
+            'goToStoreTooltip',
+            'reportProblems',
             'optionsIntro',
             'manualAddHeading',
             'addButton',
@@ -214,11 +218,111 @@ async function runExtensionFlow(locale) {
             optionsMessages.appName,
             'uses the app name as the options-page app-bar title',
         );
-        assert.equal(
-            await optionsPage.$('.options-app-bar p'),
-            null,
-            'keeps the app bar free of supporting text',
+        assert.deepEqual(
+            await optionsPage.evaluate(() => {
+                const paragraph = document.querySelector('.options-app-bar p');
+                const colorProbe = document.createElement('span');
+                colorProbe.style.color = 'var(--md-sys-color-on-surface-variant)';
+                document.body.append(colorProbe);
+                const expectedColor = getComputedStyle(colorProbe).color;
+                colorProbe.remove();
+                return {
+                    text: paragraph.textContent.trim(),
+                    fontSize: getComputedStyle(paragraph).fontSize,
+                    lineHeight: getComputedStyle(paragraph).lineHeight,
+                    hasSupportingColor: getComputedStyle(paragraph).color === expectedColor,
+                };
+            }),
+            {
+                text: optionsMessages.optionsScreenSupportingText,
+                fontSize: '14px',
+                lineHeight: '20px',
+                hasSupportingColor: true,
+            },
+            'shows the localized screen name as Material 3 app-bar supporting text',
         );
+        assert.deepEqual(
+            await optionsPage.$eval('#rate-app-link', (link) => {
+                const icon = getComputedStyle(link.querySelector('svg'));
+                const action = getComputedStyle(link);
+                return {
+                    title: link.getAttribute('title'),
+                    ariaLabel: link.getAttribute('aria-label'),
+                    href: link.getAttribute('href'),
+                    target: link.getAttribute('target'),
+                    rel: link.getAttribute('rel'),
+                    iconHeight: icon.height,
+                    iconWidth: icon.width,
+                    isStandardAppBarAction: link.classList.contains('app-bar-action'),
+                    iconIsStar: link.querySelector('svg path')?.getAttribute('d') ===
+                        'm12 17.27 5.18 3.13-1.64-7.03L21 8.64l-7.19-.61L12 1.4 9.19 8.03 2 8.64l5.46 4.73-1.64 7.03L12 17.27Z',
+                    buttonHeight: action.height,
+                    buttonWidth: action.width,
+                    borderRadius: action.borderRadius,
+                };
+            }),
+            {
+                title: optionsMessages.goToStoreTooltip,
+                ariaLabel: optionsMessages.rateApp,
+                href: 'https://chromewebstore.google.com/detail/khffmniafjplifpandmgibpkkfbbbnom?utm_source=item-share-app',
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                iconHeight: '24px',
+                iconWidth: '24px',
+                isStandardAppBarAction: true,
+                iconIsStar: true,
+                buttonHeight: '40px',
+                buttonWidth: '40px',
+                borderRadius: '50%',
+            },
+            'uses the standard app-bar star action with localized accessible name and tooltip',
+        );
+        assert.deepEqual(
+            await optionsPage.$eval('#report-problem-link', (link) => ({
+                title: link.getAttribute('title'),
+                ariaLabel: link.getAttribute('aria-label'),
+                href: link.getAttribute('href'),
+                target: link.getAttribute('target'),
+                rel: link.getAttribute('rel'),
+                isStandardAppBarAction: link.classList.contains('app-bar-action'),
+                hasIcon: link.querySelector('svg[aria-hidden="true"] path') !== null,
+                iconHeight: getComputedStyle(link.querySelector('svg')).height,
+                iconWidth: getComputedStyle(link.querySelector('svg')).width,
+                buttonHeight: getComputedStyle(link).height,
+                buttonWidth: getComputedStyle(link).width,
+                borderRadius: getComputedStyle(link).borderRadius,
+            })),
+            {
+                title: optionsMessages.reportProblems,
+                ariaLabel: optionsMessages.reportProblems,
+                href: 'https://github.com/srolemberg/my-affiliate-tag-manager/issues',
+                target: '_blank',
+                rel: 'noopener noreferrer',
+                isStandardAppBarAction: true,
+                hasIcon: true,
+                iconHeight: '24px',
+                iconWidth: '24px',
+                buttonHeight: '40px',
+                buttonWidth: '40px',
+                borderRadius: '50%',
+            },
+            'offers a localized report-problems icon with the requested issue link',
+        );
+        await optionsPage.hover('#rate-app-link');
+        await optionsPage.waitForFunction(() => (
+            Number.parseFloat(getComputedStyle(
+                document.querySelector('#rate-app-link'),
+                '::before',
+            ).opacity) >= 0.08
+        ));
+        assert.equal(
+            await optionsPage.$eval('#rate-app-link', (link) => (
+                getComputedStyle(link, '::before').opacity
+            )),
+            '0.08',
+            'shows the Material 3 hover state layer on the rate icon',
+        );
+        await optionsPage.mouse.move(0, 0);
         assert.deepEqual(
             await optionsPage.$eval('#theme-card', (card) => ({
                 heading: card.querySelector('#theme-card-heading')?.textContent.trim(),

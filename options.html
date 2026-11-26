@@ -15,9 +15,18 @@
         }
 
         .options-app-bar {
+            align-items: center;
             background: var(--md-sys-color-surface-container);
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
             margin: 0 -16px 16px;
             padding: 16px;
+        }
+
+        .options-app-bar-heading {
+            flex: 1;
+            min-width: 0;
         }
 
         .options-app-bar h1 {
@@ -26,6 +35,57 @@
             font-weight: 400;
             line-height: 28px;
             margin: 0;
+        }
+
+        .options-app-bar p {
+            color: var(--md-sys-color-on-surface-variant);
+            font-size: 14px;
+            line-height: 20px;
+            margin: 4px 0 0;
+        }
+
+        .app-bar-action-link {
+            isolation: isolate;
+            overflow: hidden;
+            position: relative;
+            text-decoration: none;
+            -webkit-tap-highlight-color: transparent;
+            transition:
+                background-color 150ms ease,
+                box-shadow 150ms ease,
+                color 150ms ease;
+        }
+
+        .app-bar-action-link::before {
+            background: currentColor;
+            border-radius: inherit;
+            content: "";
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            position: absolute;
+            transition: opacity 150ms ease;
+            z-index: -1;
+        }
+
+        .app-bar-action-link:hover::before {
+            opacity: 0.08;
+        }
+
+        .app-bar-action-link:focus-visible::before,
+        .app-bar-action-link:active::before {
+            opacity: 0.12;
+        }
+
+        .app-bar-action-link:active::before {
+            transition-duration: 0ms;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .app-bar-action-link,
+            .app-bar-action-link::before {
+                transition-duration: 0.01ms;
+            }
         }
 
         .theme-card-header {
@@ -440,7 +500,16 @@
 </head>
 <body>
 <header class="options-app-bar">
-    <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
+    <div class="options-app-bar-heading">
+        <h1 data-i18n="appName">Minhas Tags de Afiliado</h1>
+        <p data-i18n="optionsScreenSupportingText">Configurações</p>
+    </div>
+    <a id="report-problem-link" class="app-bar-action app-bar-action-link" href="https://github.com/srolemberg/my-affiliate-tag-manager/issues" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="reportProblems" data-i18n-title="reportProblems" title="Reportar problemas">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 8h-2.81a5.99 5.99 0 0 0-1.1-1.65l1.45-1.45L16.12 3.5l-1.7 1.7a5.984 5.984 0 0 0-4.84 0l-1.7-1.7L6.46 4.9l1.45 1.45A5.985 5.985 0 0 0 6.81 8H4v2h2.09c-.05.33-.09.66-.09 1v1H4v2h2v1c0 .34.04.67.09 1H4v2h2.81A6.004 6.004 0 0 0 12 21a6.004 6.004 0 0 0 5.19-3H20v-2h-2.09c.05-.33.09-.66.09-1v-1h2v-2h-2v-1c0-.34-.04-.67-.09-1H20V8zm-6 8h-4v-2h4v2zm0-4h-4v-2h4v2z"/></svg>
+    </a>
+    <a id="rate-app-link" class="app-bar-action app-bar-action-link" href="https://chromewebstore.google.com/detail/khffmniafjplifpandmgibpkkfbbbnom?utm_source=item-share-app" target="_blank" rel="noopener noreferrer" data-i18n-aria-label="rateApp" data-i18n-title="goToStoreTooltip" title="Ir para a loja">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 17.27 5.18 3.13-1.64-7.03L21 8.64l-7.19-.61L12 1.4 9.19 8.03 2 8.64l5.46 4.73-1.64 7.03L12 17.27Z"/></svg>
+    </a>
 </header>
 <section id="theme-card" role="radiogroup" aria-labelledby="theme-card-heading">
     <header class="theme-card-header">

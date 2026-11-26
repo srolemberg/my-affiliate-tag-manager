@@ -35,6 +35,18 @@
   "optionsIntro": {
     "message": "Adicione uma tag manualmente informando a URL original da Amazon; a chave será extraída automaticamente."
   },
+  "optionsScreenSupportingText": {
+    "message": "Configurações"
+  },
+  "rateApp": {
+    "message": "Avalie"
+  },
+  "goToStoreTooltip": {
+    "message": "Ir para a loja"
+  },
+  "reportProblems": {
+    "message": "Reportar problemas"
+  },
   "themePreferenceHeading": {
     "message": "Tema da aplicação"
   },

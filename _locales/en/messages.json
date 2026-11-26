@@ -35,6 +35,18 @@
   "optionsIntro": {
     "message": "Add a tag manually by entering its original Amazon URL; the tag key is extracted automatically."
   },
+  "optionsScreenSupportingText": {
+    "message": "Settings"
+  },
+  "rateApp": {
+    "message": "Rate"
+  },
+  "goToStoreTooltip": {
+    "message": "Go to the store"
+  },
+  "reportProblems": {
+    "message": "Report a problem"
+  },
   "themePreferenceHeading": {
     "message": "Application theme"
   },
