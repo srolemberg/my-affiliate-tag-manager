@@ -74,13 +74,60 @@ test('loads the extension and exercises basic options and popup flows', {
             await optionsPage.$eval('#saved-tags-card', (card) => (
                 card.querySelector('.saved-tags-header h2[data-i18n="savedTagsHeading"]') !== null &&
                 card.querySelector('.saved-tags-content #tag-list') !== null &&
+                getComputedStyle(card.querySelector('.saved-tags-content')).padding === '16px' &&
                 [...card.querySelector('.toolbar').querySelectorAll('button')]
                     .map((button) => button.id)
                     .join(',') === 'save-tags-button,export-button,delete-all-button' &&
+                card.querySelector('#save-tags-button').classList.contains('button-primary') &&
+                card.querySelector('#export-button').classList.contains('button-secondary') &&
+                card.querySelector('#delete-all-button').classList.contains('button-tertiary') &&
                 getComputedStyle(card.querySelector('.toolbar')).flexWrap === 'wrap'
             )),
             true,
-            'places the saved tag list and management actions in the card body and footer',
+            'places saved tag actions in the footer with primary, secondary, and tertiary variants',
+        );
+        assert.deepEqual(
+            await optionsPage.$$eval(
+                '#saved-tags-card .toolbar button',
+                (buttons) => buttons.map((button) => {
+                    const style = getComputedStyle(button);
+                    return {
+                        background: style.backgroundColor,
+                        border: style.borderColor,
+                        color: style.color,
+                    };
+                }),
+            ),
+            await optionsPage.evaluate(() => {
+                const color = (token) => {
+                    const sample = document.createElement('span');
+                    sample.style.color = `var(--md-sys-color-${token})`;
+                    sample.style.backgroundColor = `var(--md-sys-color-${token})`;
+                    sample.style.borderColor = `var(--md-sys-color-${token})`;
+                    document.body.append(sample);
+                    const result = getComputedStyle(sample).color;
+                    sample.remove();
+                    return result;
+                };
+                return [
+                    {
+                        background: color('primary'),
+                        border: color('primary'),
+                        color: color('on-primary'),
+                    },
+                    {
+                        background: color('secondary-container'),
+                        border: color('secondary-container'),
+                        color: color('on-secondary-container'),
+                    },
+                    {
+                        background: 'rgba(0, 0, 0, 0)',
+                        border: color('outline'),
+                        color: color('primary'),
+                    },
+                ];
+            }),
+            'uses filled, tonal, and outlined Material button styling in order',
         );
         assert.equal(
             await optionsPage.$eval(
@@ -252,17 +299,26 @@ test('loads the extension and exercises basic options and popup flows', {
                     const descriptionLabel = descriptionInput?.nextElementSibling;
                     const urlInput = item.querySelector('#tag-url-0');
                     const urlLabel = urlInput?.nextElementSibling;
+                    const deleteButton = item.querySelector('.delete-tag-button');
                     return descriptionInput?.parentElement.classList.contains('text-field') &&
                         descriptionLabel?.htmlFor === descriptionInput.id &&
                         descriptionLabel?.classList.contains('text-field-label') &&
                         getComputedStyle(descriptionLabel).fontSize === '12px' &&
                         urlInput?.parentElement.classList.contains('text-field') &&
                         urlLabel?.htmlFor === urlInput.id &&
-                        urlLabel?.classList.contains('text-field-label');
+                        urlLabel?.classList.contains('text-field-label') &&
+                        item.querySelector('.tag-key-display')?.tagName === 'H3' &&
+                        item.querySelector('.tag-key-display')?.textContent ===
+                            'puppeteer-check-20' &&
+                        getComputedStyle(item.querySelector('.tag-fields'))
+                            .gridTemplateColumns.split(' ').length === 1 &&
+                        deleteButton?.getAttribute('aria-label') ===
+                            'Excluir tag puppeteer-check-20' &&
+                        deleteButton.querySelector('svg[aria-hidden="true"]') !== null;
                 },
             ),
             true,
-            'renders saved description and URL editors as Material floating-label textfields',
+            'renders saved items as stacked textfields with a key heading and delete icon',
         );
         await optionsPage.evaluate(async () => {
             const {savedTags} = await chrome.storage.local.get('savedTags');
@@ -285,13 +341,21 @@ test('loads the extension and exercises basic options and popup flows', {
                 document.body.append(colorSample);
                 const expectedColor = getComputedStyle(colorSample).backgroundColor;
                 colorSample.remove();
+                const listRect = list.getBoundingClientRect();
+                const dividerRect = dividers[0].getBoundingClientRect();
                 return dividers.length === 1 &&
                     dividers[0].getAttribute('aria-hidden') === 'true' &&
                     getComputedStyle(dividers[0]).height === '2px' &&
-                    getComputedStyle(dividers[0]).backgroundColor === expectedColor;
+                    getComputedStyle(dividers[0]).backgroundColor === expectedColor &&
+                    getComputedStyle(list.children[0]).backgroundColor ===
+                        getComputedStyle(list).backgroundColor &&
+                    Math.abs(dividerRect.left - listRect.left) < 1 &&
+                    Math.abs(dividerRect.right - listRect.right) < 1 &&
+                    getComputedStyle(list.children[0]).borderRadius === '16px 16px 0px 0px' &&
+                    getComputedStyle(list.children[1]).borderRadius === '0px 0px 16px 16px';
             }),
             true,
-            'separates saved entries with the Material divider color and dimensions',
+            'renders a continuous rounded list card with full-width Material dividers',
         );
         await optionsPage.evaluate(async () => {
             await chrome.storage.local.set({

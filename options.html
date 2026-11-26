@@ -169,30 +169,62 @@
         }
 
         #tag-list {
+            background: var(--md-sys-color-surface-container-low);
+            border-radius: 16px;
             list-style: none;
             margin: 0;
+            overflow: hidden;
             padding: 0;
         }
 
-        #tag-list li {
+        #tag-list li[data-original-tag] {
+            align-items: center;
+            background: var(--md-sys-color-surface-container-low);
+            display: grid;
+            gap: 0 12px;
+            grid-template-columns: minmax(0, 1fr) 40px;
             margin: 0;
-            padding: 12px 0;
+            padding: 16px;
         }
 
-        #tag-list li:first-child {
-            padding-top: 0;
+        #tag-list li[data-original-tag]:first-child {
+            border-radius: 16px 16px 0 0;
         }
 
-        #tag-list li:last-child {
-            padding-bottom: 0;
+        #tag-list li[data-original-tag]:last-child {
+            border-radius: 0 0 16px 16px;
+        }
+
+        #tag-list li[data-original-tag]:first-child:last-child {
+            border-radius: 16px;
+        }
+
+        #tag-list .empty-tag-list {
+            color: var(--md-sys-color-on-surface-variant);
+            margin: 0;
+            padding: 16px;
         }
 
         #tag-list .m3-divider {
             background: var(--md-sys-color-outline-variant);
             border: 0;
             height: 2px;
-            margin: 4px 0 0;
-            width: 100%;
+            grid-column: 1 / -1;
+            margin: 16px -16px 0;
+            width: calc(100% + 32px);
+        }
+
+        .saved-tag-content {
+            min-width: 0;
+        }
+
+        .tag-key-display {
+            color: var(--md-sys-color-on-surface);
+            font-size: 16px;
+            font-weight: 500;
+            line-height: 24px;
+            margin: 0 0 12px;
+            overflow-wrap: anywhere;
         }
 
         .text-field {
@@ -280,23 +312,44 @@
             padding: 8px 24px;
         }
 
-        #tag-list li {
-            display: grid;
-            gap: 8px;
-        }
-
         .tag-fields {
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 8px;
+            gap: 12px;
         }
 
         .tag-fields .text-field {
             min-width: 0;
         }
 
-        .tag-url-field {
-            grid-column: 1 / -1;
+        .delete-tag-button {
+            align-items: center;
+            background: transparent;
+            border: 0;
+            border-radius: 50%;
+            color: var(--md-sys-color-error);
+            display: inline-flex;
+            grid-column: 2;
+            grid-row: 1;
+            height: 40px;
+            justify-content: center;
+            padding: 8px;
+            width: 40px;
+        }
+
+        .saved-tag-content {
+            grid-column: 1;
+            grid-row: 1;
+        }
+
+        .delete-tag-button:hover {
+            background: var(--md-sys-color-error-container);
+            color: var(--md-sys-color-on-error-container);
+        }
+
+        .delete-tag-button svg {
+            fill: currentColor;
+            height: 20px;
+            width: 20px;
         }
 
         .tag-url-error {
@@ -328,6 +381,18 @@
             gap: 8px;
             margin: 0;
             padding: 8px 16px 16px;
+        }
+
+        .toolbar .button-secondary {
+            background: var(--md-sys-color-secondary-container);
+            border-color: var(--md-sys-color-secondary-container);
+            color: var(--md-sys-color-on-secondary-container);
+        }
+
+        .toolbar .button-tertiary {
+            background: transparent;
+            border-color: var(--md-sys-color-outline);
+            color: var(--md-sys-color-primary);
         }
 
         #status {
@@ -398,9 +463,9 @@
         <ul id="tag-list"></ul>
     </div>
     <footer class="toolbar">
-        <button id="save-tags-button" type="button" disabled data-i18n="saveChangesButton">Salvar alterações</button>
-        <button id="export-button" type="button" data-i18n="exportJsonButton">Exportar JSON</button>
-        <button id="delete-all-button" type="button" disabled data-i18n="deleteAllButton">Excluir todas</button>
+        <button id="save-tags-button" class="button-primary" type="button" disabled data-i18n="saveChangesButton">Salvar alterações</button>
+        <button id="export-button" class="button-secondary" type="button" data-i18n="exportJsonButton">Exportar JSON</button>
+        <button id="delete-all-button" class="button-tertiary" type="button" disabled data-i18n="deleteAllButton">Excluir todas</button>
     </footer>
 </section>
 

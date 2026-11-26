@@ -119,6 +119,14 @@
   "deleteButton": {
     "message": "Delete"
   },
+  "deleteTagAriaLabel": {
+    "message": "Delete tag $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
   "confirmDeleteTag": {
     "message": "Delete the key \"$1\"?",
     "placeholders": {

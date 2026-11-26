@@ -119,6 +119,14 @@
   "deleteButton": {
     "message": "Excluir"
   },
+  "deleteTagAriaLabel": {
+    "message": "Excluir tag $1",
+    "placeholders": {
+      "tag": {
+        "content": "$1"
+      }
+    }
+  },
   "confirmDeleteTag": {
     "message": "Deseja excluir a chave \"$1\"?",
     "placeholders": {

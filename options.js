@@ -98,6 +98,7 @@ function renderTags() {
 
     if (savedTags.length === 0) {
         const emptyItem = document.createElement('li');
+        emptyItem.className = 'empty-tag-list';
         emptyItem.textContent = chrome.i18n.getMessage('noSavedTags');
         tagList.append(emptyItem);
         return;
@@ -109,9 +110,11 @@ function renderTags() {
         fields.className = 'tag-fields';
 
         item.dataset.originalTag = entry.tag;
-        const tagLabel = document.createElement('div');
+        const content = document.createElement('div');
+        content.className = 'saved-tag-content';
+        const tagLabel = document.createElement('h3');
         tagLabel.className = 'tag-key-display';
-        tagLabel.textContent = chrome.i18n.getMessage('currentKeyLabel', entry.tag);
+        tagLabel.textContent = entry.tag;
 
         const descriptionField = document.createElement('div');
         descriptionField.className = 'text-field';
@@ -158,11 +161,26 @@ function renderTags() {
         urlError.id = `tag-url-error-${index}`;
         urlError.setAttribute('aria-live', 'polite');
         urlField.append(urlInput, urlLabel, urlError);
-        fields.append(tagLabel, descriptionField, urlField);
+        fields.append(descriptionField, urlField);
+        content.append(tagLabel, fields);
 
         const deleteButton = document.createElement('button');
         deleteButton.type = 'button';
-        deleteButton.textContent = chrome.i18n.getMessage('deleteButton');
+        deleteButton.className = 'delete-tag-button';
+        deleteButton.setAttribute(
+            'aria-label',
+            chrome.i18n.getMessage('deleteTagAriaLabel', entry.tag),
+        );
+        const deleteIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        deleteIcon.setAttribute('aria-hidden', 'true');
+        deleteIcon.setAttribute('viewBox', '0 0 24 24');
+        const deletePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        deletePath.setAttribute(
+            'd',
+            'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
+        );
+        deleteIcon.append(deletePath);
+        deleteButton.append(deleteIcon);
         /** Confirms the request before deleting this record. */
         deleteButton.addEventListener('click', async () => {
             if (!window.confirm(
@@ -179,7 +197,7 @@ function renderTags() {
                     chrome.i18n.getMessage('deleteTagError', getErrorMessage(error));
             }
         });
-        item.append(fields, deleteButton);
+        item.append(content, deleteButton);
         if (index < savedTags.length - 1) {
             const divider = document.createElement('hr');
             divider.className = 'm3-divider';
@@ -199,15 +217,12 @@ function renderTags() {
         input.addEventListener('input', () => {
             const keyDisplay = input.closest('li')?.querySelector('.tag-key-display');
             if (!keyDisplay) {
-                console.error('Could not find the tag key display for an edited URL.');
+                console.error('Could not find the tag title for an edited URL.');
                 updateSaveButtonState();
                 return;
             }
             const tag = getTagFromAmazonUrl(input.value);
-            keyDisplay.textContent = chrome.i18n.getMessage(
-                'currentKeyLabel',
-                tag || chrome.i18n.getMessage('invalidTagUrlKey'),
-            );
+            keyDisplay.textContent = tag || chrome.i18n.getMessage('invalidTagUrlKey');
             updateSaveButtonState();
         });
     });
