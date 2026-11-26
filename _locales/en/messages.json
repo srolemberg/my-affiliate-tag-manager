@@ -326,13 +326,16 @@
     "message": "About the notification icon"
   },
   "badgeLegendValid": {
-    "message": "The URL has a saved key that matches the most recently accessed key."
+    "message": "The active tab's URL has a saved key that matches the most recently accessed key."
   },
   "badgeLegendDifferent": {
-    "message": "The saved key differs from the most recently accessed key, or the URL omits the key and the last access is still recent."
+    "message": "The active tab's URL has a saved key that differs from the most recently accessed key; if the URL has no key, the notification means the last access was less than 24 hours ago."
   },
   "badgeLegendInvalid": {
-    "message": "The URL key is invalid or not saved, or the inferred last access has expired (24 hours)."
+    "message": "The active tab's URL has an invalid or unsaved key; if the URL has no key, the access used to infer it has expired (24 hours)."
+  },
+  "badgeLegendHidden": {
+    "message": "The icon is not displayed when the extension is not monitoring the active tab's URL."
   },
   "howItWorksHeading": {
     "message": "How it works"

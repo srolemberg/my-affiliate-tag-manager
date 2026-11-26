@@ -12,7 +12,7 @@
             font: 14px Arial, sans-serif;
             gap: 8px;
             margin: 0;
-            padding: 0 16px 52px;
+            padding: 0 16px;
             width: 320px;
         }
 
@@ -113,6 +113,7 @@
         .open-buttons {
             display: flex;
             gap: 8px;
+            margin-top: 8px;
         }
 
         #status:empty {
@@ -315,7 +316,8 @@
             margin-top: 8px;
         }
 
-        .how-it-works .disclaimer {
+        .how-it-works .disclaimer,
+        .how-it-works .affiliate-tag-note {
             color: var(--md-sys-color-error);
         }
 
@@ -346,15 +348,15 @@
         }
 
         .badge-legend-valid {
-            color: var(--md-sys-color-tertiary);
+            color: #188038;
         }
 
         .badge-legend-different {
-            color: var(--md-sys-color-secondary);
+            color: #f9ab00;
         }
 
         .badge-legend-invalid {
-            color: var(--md-sys-color-error);
+            color: #d93025;
         }
 
         button {
@@ -363,17 +365,6 @@
             width: 100%;
         }
 
-        #extension-footer {
-            border: 0;
-            display: block;
-            height: 36px;
-            left: 0;
-            position: fixed;
-            right: 0;
-            bottom: 0;
-            z-index: 1;
-            width: 100%;
-        }
     </style>
 </head>
 <body>
@@ -410,7 +401,7 @@
 </section>
 <hr class="m3-divider">
 <div class="m3-accordion-list">
-<details class="m3-accordion" name="popup-accordions">
+<details class="m3-accordion how-it-works" name="popup-accordions">
     <summary class="m3-list-item">
         <svg class="m3-list-item-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2Zm1 17h-2v-2h2v2Zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26A2 2 0 0 0 14 9a2 2 0 0 0-4 0H8a4 4 0 1 1 8 0c0 .88-.36 1.68-.93 2.25Z"/></svg>
         <span class="m3-list-item-label" data-i18n="howItWorksHeading">Como funciona</span>
@@ -419,7 +410,7 @@
     <div class="m3-accordion-content">
         <p data-i18n="howItWorksCapture">Ao visitar uma página cuja URL contém uma chave de afiliado, a extensão identifica e armazena essa URL em uma lista interna. Assim, você pode acessá-la rapidamente sem precisar procurá-la novamente.</p>
         <p data-i18n="howItWorksExpiry">A extensão também acompanha a janela de 24 horas associada à chave, para informar quando esse período pode ter terminado. Esse indicador não confirma a expiração da sessão da Amazon nem significa necessariamente que seja preciso renovar credenciais.</p>
-        <p data-i18n="howItWorksOpen">Use a lista para abrir uma URL salva. A tag de afiliado não precisa permanecer visível na barra de endereços durante a navegação: a Amazon pode armazená-la em um cookie que rastreia compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL.</p>
+        <p class="affiliate-tag-note" data-i18n="howItWorksOpen">Use a lista para abrir uma URL salva. A tag de afiliado não precisa permanecer visível na barra de endereços durante a navegação: a Amazon pode armazená-la em um cookie que rastreia compras pelas próximas 24 horas, mesmo que o parâmetro desapareça da URL.</p>
         <p class="disclaimer" data-i18n="howItWorksDisclaimer">A sessão é gerenciada pela Amazon. Por isso, a extensão não pode garantir que uma alteração tenha efeito imediato nem confirmar o estado da sessão.</p>
     </div>
 </details>
@@ -434,6 +425,7 @@
             <li><span class="badge-legend-symbol badge-legend-valid">&#x2713;</span> <span data-i18n="badgeLegendValid">A URL contém uma chave salva igual à última acessada.</span></li>
             <li><span class="badge-legend-symbol badge-legend-different">&#x0021;</span> <span data-i18n="badgeLegendDifferent">A chave salva é diferente da última acessada, ou a URL não mostra a chave e o último acesso ainda é recente.</span></li>
             <li><span class="badge-legend-symbol badge-legend-invalid">&#x2717;</span> <span data-i18n="badgeLegendInvalid">A chave da URL não está salva, é inválida ou o último acesso inferido expirou (24 horas).</span></li>
+            <li data-i18n="badgeLegendHidden">O ícone não é exibido quando a extensão não está observando a URL da aba ativa.</li>
         </ul>
     </div>
 </details>
@@ -449,7 +441,6 @@
     </div>
 </details>
 </div>
-<iframe id="extension-footer" src="footer.html" data-i18n-title="extensionFooterFrameTitle" title="Versão da extensão e autor do projeto"></iframe>
 <script src="i18n.js"></script>
 <script src="tag-utils.js"></script>
 <script src="M3/js/theme.js"></script>

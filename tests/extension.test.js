@@ -104,6 +104,11 @@ test('loads the extension and exercises basic options and popup flows', {
         await popupPage.waitForSelector(
             '#saved-tag-menu [data-tag="puppeteer-check-20"]',
         );
+        assert.equal(
+            await popupPage.$('#extension-footer'),
+            null,
+            'does not render a footer in the popup',
+        );
         assert.equal(await popupPage.$('input#saved-tag'), null);
         assert.equal(await popupPage.$('label[for="saved-tag"]'), null);
         assert.equal(
@@ -291,6 +296,18 @@ test('loads the extension and exercises basic options and popup flows', {
             '0px',
             'keeps the accordion list items flush without spacing',
         );
+        assert.equal(
+            await popupPage.$eval('.how-it-works .affiliate-tag-note', (paragraph) => {
+                const colorProbe = document.createElement('span');
+                colorProbe.style.color = 'var(--md-sys-color-error)';
+                document.body.append(colorProbe);
+                const expectedColor = getComputedStyle(colorProbe).color;
+                colorProbe.remove();
+                return getComputedStyle(paragraph).color === expectedColor;
+            }),
+            true,
+            'highlights the affiliate-tag explanation with the error color',
+        );
         assert.deepEqual(
             await popupPage.evaluate(() => {
                 const buttons = document.querySelector('.open-buttons');
@@ -306,6 +323,16 @@ test('loads the extension and exercises basic options and popup flows', {
             }),
             {above: 16, below: 8},
             'adds spacing above the divider when the status message is empty',
+        );
+        assert.equal(
+            await popupPage.evaluate(() => {
+                const picker = document.querySelector('.tag-picker');
+                const buttons = document.querySelector('.open-buttons');
+                return buttons.getBoundingClientRect().top -
+                    picker.getBoundingClientRect().bottom;
+            }),
+            16,
+            'matches the spacing below the tag button to the spacing above it',
         );
         assert.equal(
             await popupPage.$$eval(
@@ -377,6 +404,29 @@ test('loads the extension and exercises basic options and popup flows', {
             badgeLegendCodePoints,
             [0x2713, 0x0021, 0x2717],
             'popup legend must render the exact success, alert, and error code points',
+        );
+        assert.match(
+            await popupPage.$eval(
+                '.badge-legend [data-i18n="badgeLegendHidden"]',
+                (item) => item.textContent,
+            ),
+            /^(O ícone não é exibido.*URL da aba ativa|The icon is not displayed.*active tab's URL)\.$/i,
+            'explains when the notification icon is not displayed',
+        );
+        assert.equal(
+            await popupPage.$$eval('.badge-legend li', (items) => (
+                items.every((item) => /aba ativa|active tab/i.test(item.textContent))
+            )),
+            true,
+            'describes every notification state in terms of the active tab',
+        );
+        assert.deepEqual(
+            await popupPage.$$eval(
+                '.badge-legend-symbol',
+                (symbols) => symbols.map((symbol) => getComputedStyle(symbol).color),
+            ),
+            ['rgb(24, 128, 56)', 'rgb(249, 171, 0)', 'rgb(217, 48, 37)'],
+            'uses the same colors as the corresponding notification badges',
         );
         const settingsTargetPromise = browser.waitForTarget(
             (target) => target.url() === `chrome-extension://${extensionId}/options.html`,

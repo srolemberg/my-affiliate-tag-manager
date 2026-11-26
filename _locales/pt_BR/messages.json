@@ -326,13 +326,16 @@
     "message": "Sobre o ícone de notificação"
   },
   "badgeLegendValid": {
-    "message": "A URL contém uma chave salva igual à última acessada."
+    "message": "Na aba ativa, a URL contém uma chave salva igual à última acessada."
   },
   "badgeLegendDifferent": {
-    "message": "A chave salva é diferente da última acessada, ou a URL não mostra a chave e o último acesso ainda é recente."
+    "message": "Na aba ativa, a URL contém uma chave salva diferente da última acessada; se não houver chave na URL, a notificação indica que o último acesso ocorreu há menos de 24 horas."
   },
   "badgeLegendInvalid": {
-    "message": "A chave da URL não está salva, é inválida ou o último acesso inferido expirou (24 horas)."
+    "message": "Na aba ativa, a chave da URL é inválida ou não está salva; se não houver chave na URL, o acesso usado para inferi-la expirou (24 horas)."
+  },
+  "badgeLegendHidden": {
+    "message": "O ícone não é exibido quando a extensão não está observando a URL da aba ativa."
   },
   "howItWorksHeading": {
     "message": "Como funciona"
